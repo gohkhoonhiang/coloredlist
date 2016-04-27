@@ -274,7 +274,7 @@ class ListHandler(tornado.web.RequestHandler):
 
     def post(self):
         text = self.get_body_argument("text")
-        item_id = uuid.uuid4()
+        item_id = str(uuid.uuid4())
         list_items[item_id] = {"id":item_id,"text":text,"color":"Blue"}
         self.redirect("/list")
 ```
