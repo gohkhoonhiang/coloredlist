@@ -1,0 +1,14 @@
+<ul>
+{% for item_id in items %}
+    <li class="{{ items[item_id]["color"] }}">
+        <span>{{ items[item_id]['text'] }}</span>
+    </li>
+{% end %}
+</ul>
+
+<form action="/list/create" method="post">
+    <div>
+        <input type="text" id="new-list-item-text" name="text">
+        <input type="submit" id="new-item-submit" value="Add" class="button">
+    </div>
+</form>

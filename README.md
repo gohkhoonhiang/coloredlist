@@ -169,3 +169,126 @@ def get(self):
 Now the code looks much cleaner as we separate the view out of the logic code.
 
 
+# Creating the List
+
+We now have a basic structure application. It's time to start creating the list itself.
+
+We will start with just 2 simple functionalities for the list.
+* View the list
+* Create a list item
+
+
+## URL Mapping
+
+For each of the functionalities above, we will design endpoints for the client to send the requests to.
+
+In the `make_app()` method we created earlier, we will add a few more `URLSpec` objects for each endpoint.
+
+```
+def make_app():
+    return tornado.web.Application([
+        url(r"/", MainHandler),
+        url(r"/list/create", ListHandler),
+        url(r"/list", ListHandler),
+    ],
+    debug=True)
+```
+
+
+## In Memory Storage
+
+For the time being, we will not use a persistent database for storage. Instead, we will create a in-memory storage for our list items.
+
+We will come to using persistent storage at a later stage. For now, our purpose is to get the logic working.
+
+We declare a global variable `list_items` that we will use as a in-memory storage for all the list items.
+
+We will define it as a dictionary where the item ID will be the key and the item definition is another dictionary that forms the value paired with the key.
+
+```
+list_items = {
+    "1":{"id":"1","text":"Walk the dog","color":"Red"},
+    "2":{"id":"2","text":"Pick up dry cleaning","color":"Blue"},
+    "3":{"id":"3","text":"Milk","color":"Green"},
+}
+```
+
+We initialize some data first that we can display in the front-end.
+
+
+## Import UUID
+
+For the purpose of using `uuid` to generate a unique ID for each item, we need to remember to import the `uuid` module.
+
+```
+import uuid
+```
+
+
+## List Template
+
+To help us visualize the data, let's create the `list.html` template file first.
+
+```
+<ul>
+{% for item_id in items %}
+    <li class="{{ items[item_id]["color"] }}">
+        <span>{{ items[item_id]['text'] }}</span>
+    </li>
+{% end %}
+</ul>
+
+<form action="/list/create" method="post">
+    <div>
+        <input type="text" id="new-list-item-text" name="text">
+        <input type="submit" id="new-item-submit" value="Add" class="button">
+    </div>
+</form>
+```
+
+Notice something different is happening in this template. We have injected some python code in this template to help us display the list items.
+
+Since we are going to have a list of items, it is logical to have a loop control to display each item. This is where we use the `{% for item_id in items %}` construct.
+
+In our in-memory store, we use the item ID as the key for the item definition itself, so in order to access the item data, we will need to get the item dictionary and then the attribute.
+
+For example, we will use `{{ items[item_id]["text"] }}` to retrieve the text of the item with a specific `item_id`.
+
+We have not added all the `<head>` and `<body>` tags in this template, because we are going to make use of template inheritance later.
+
+For now we just want to make sure the data are displayed correctly with this structure.
+
+This template should display a list of items in storage, and also provide a form to allow creating a new item which will be added to the in-memory storage.
+
+
+## List Handler
+
+We will not use the `MainHandler` for handling requests pertaining to the list. Instead, we will create a new `ListHandler` class for this purpose.
+
+For each of the functionalities, we assign a method in the `ListHandler` according to the HTTP method we allow for access.
+
+```
+class ListHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("list.html", items=list_items)
+
+    def post(self):
+        text = self.get_body_argument("text")
+        item_id = uuid.uuid4()
+        list_items[item_id] = {"id":item_id,"text":text,"color":"Blue"}
+        self.redirect("/list")
+```
+As the client requests for `http://server:port/list`, the `ListHandler`'s `get` method will render the `list.html` page.
+
+If the client enters some text in the form and hit the `Add` button, it will send a `POST` request containing the form data. The `ListHandler`'s `post` method will handle this request.
+
+First we will extract the text entered by the client by calling `self.get_body_argument("text")`. Note that all form data are accessible by `self.get_body_argument` method by passing in the input name as the method parameter.
+
+We will auto-generate a unique ID for this item by using `uuid.uuid4()` method.
+
+Then we create a new dictionary containing all the item data and add it to the in-memory `list_items` storage using the `item_id` as key.
+
+Once we are done with the storage, we will redirect to the `/list` page so that the changes can be reflected to the user.
+
+We will realize that the list items are not sorted according to the order they are created. For that, we will need to devise some data strucutre and logic to handle the sorting later.
+
