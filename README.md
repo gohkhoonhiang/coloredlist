@@ -292,3 +292,141 @@ Once we are done with the storage, we will redirect to the `/list` page so that 
 
 We will realize that the list items are not sorted according to the order they are created. For that, we will need to devise some data strucutre and logic to handle the sorting later.
 
+
+# Edit and Delete List Items
+
+A list without the edit or delete functions are almost useless. We will now add these functionalities to our list.
+
+There can be a few ways to approach this problem.
+
+1. Continue using `ListHandler` and add the corresponding `put` and `delete` methods for editing and deleting list items.
+2. Create a separate `ListItemEditHandler` and `ListItemDeleteHandler` for editing and deleting list items.
+
+The first approach will be more compact due to having only a single handler. The methods also clearly reflects the purpose of the request, mapping edit to `put` and delete to `delete` methods.
+
+However, we cannot simply use a form for editing and deleting, because HTML `<form>` does not support `put` and `delete` methods. We will need to use AJAX for these actions.
+
+The second approach is more lengthy due to having to create 2 more handlers just for each of the actions.
+
+However, we can easily use a form to send a `post` request for each actions, and map to a `post` method within each handler.
+
+Personally, I would prefer doing the first approach. I only need to main a single handler, while having the advantage of mapping the actions correctly to the methods: edit to `put` and delete to `delete`.
+
+
+## URL Mapping
+
+For using the first approach, we will map the request URL as follows:
+
+```
+url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler),
+```
+
+
+## List Handler
+
+Since it is an edit action, we will map it to the `put` method of the `ListHandler`.
+
+```
+def put(self, item_id):
+    text = self.get_body_argument("text")
+    item = None
+    try:
+        item = list_items[item_id]
+    except KeyError:
+        self.set_status(404)
+        self.finish("Not found")
+        return
+    if item:
+        item["text"] = text
+    self.set_status(200)
+    self.finish("OK")
+    return
+```
+
+The `item_id` is already provided as a path argument. We only need to extract the `text` data from the request body by calling `self.get_body_argument` method.
+
+To do a little error handling, we will try to get the item data from the `list_items` dictionary, while catching `KeyError`.
+
+If `KeyError` is raised, then we will return a status of `404` and message `Not found` to inform the client of the error.
+
+If the item is found, then we just overwrite the `text` value.
+
+At the end of it, we will return a status of `200` and message `OK` to inform the client that the edit is done.
+
+
+## Importing Javascript
+
+We can write plain Javascript for the AJAX calls, but I decide that it is best to use existing libraries to make our life easier.
+
+We will use jQuery to help with handling the AJAX calls, so we will include this following code in the `list.html` file.
+
+```
+<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+```
+
+We will add this `<script>` tag at the end of the page so that it does not slow down the page loading.
+
+
+## Edit Template
+
+Then, we will need to cater for editing by changing the `list.html` file. Previously we have a simple `<span>{{ items[item_id]['text'] }}</span>` to display the item text. Now we need to make it editable.
+
+```
+<span><input type="hidden" id="edit-item-{{ item_id }}-id" value="{{ item_id }}"><input type="text" id="edit-item-{{ item_id }}-text" name="text" value="{{ items[item_id]['text'] }}"><a href="#" id="edit-item-{{ item_id }}-submit" class="button edit-button">Edit</a></span>
+```
+
+We have added a hidden field to store the `item_id`, put the item text in a text input field and created a link to submit the edit action.
+
+Note that we have created a unique ID for each input field as there may be multiple of such fields in the same list.
+
+
+## AJAX
+
+Now we have the fields ready, we need to add in the logic to send the data to the server.
+
+Below the `<script>` tag that imports the jQuery source, we will create our customized Javascript that will perform the AJAX call.
+ 
+```
+<script type="text/javascript">
+<script type="text/javascript">
+$(document).ready(function() {
+    $('.edit-button').click(function() {
+        var itemSpan = $(this).parent();
+        var itemId = $(itemSpan).find("input[type='hidden']").val();
+        var text = $(itemSpan).find("input[name='text']").val();
+        var url = "/list/" + itemId + "/edit";
+        console.log(url);
+        $.ajax({
+            type: "PUT",
+            url: url,
+            dataType: "json",
+            data: {"id": itemId, "text": text},
+            statusCode: {
+                200: function(xhr) {
+                    alert("Item updated successfully");
+                },
+                404: function(xhr) {
+                    alert("Item ID not found");
+                },
+            },
+        });
+    });
+});
+</script>
+```
+
+There is quite a lot going on in this segment of code.
+
+First, we attach the `click` event to all the elements with the class `edit-button`. In this case, it will be all the `<a>` tags for each list item.
+
+Once the `click` event is triggered, we will try to extract the data we require.
+
+We get the parent `<span>` containing the `<a>` being clicked. This allows us to extract the element containing the `item_id` and `text` of the item.
+
+Once we have these data, we can now construct the URL and data for the AJAX call.
+
+Since we have defined a `put` method in the `ListHandler` to handle the edit function, we will set the call type to `PUT`. The data will be sent as a `json` data type and the data itself is constructed using the values from the input fields.
+
+Once the server returns a response, we will display an alert to inform the status.
+
+

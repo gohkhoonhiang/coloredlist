@@ -1,7 +1,7 @@
 <ul>
 {% for item_id in items %}
     <li class="{{ items[item_id]["color"] }}">
-        <span>{{ items[item_id]['text'] }}</span>
+        <span><input type="hidden" id="edit-item-{{ item_id }}-id" value="{{ item_id }}"><input type="text" id="edit-item-{{ item_id }}-text" name="text" value="{{ items[item_id]['text'] }}"><a href="#" id="edit-item-{{ item_id }}-submit" class="button edit-button">Edit</a></span>
     </li>
 {% end %}
 </ul>
@@ -12,3 +12,30 @@
         <input type="submit" id="new-item-submit" value="Add" class="button">
     </div>
 </form>
+
+<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+    $('.edit-button').click(function() {
+        var itemSpan = $(this).parent();
+        var itemId = $(itemSpan).find("input[type='hidden']").val();
+        var text = $(itemSpan).find("input[name='text']").val();
+        var url = "/list/" + itemId + "/edit";
+        console.log(url);
+        $.ajax({
+            type: "PUT",
+            url: url,
+            dataType: "json",
+            data: {"id": itemId, "text": text},
+            statusCode: {
+                200: function(xhr) {
+                    alert("Item updated successfully");
+                },
+                404: function(xhr) {
+                    alert("Item ID not found");
+                },
+            },
+        });
+    });
+});
+</script>

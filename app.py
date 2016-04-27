@@ -26,10 +26,26 @@ class ListHandler(tornado.web.RequestHandler):
         list_items[item_id] = {"id":item_id,"text":text,"color":"Blue"}
         self.redirect("/list")
 
+    def put(self, item_id):
+        text = self.get_body_argument("text")
+        item = None
+        try:
+            item = list_items[item_id]
+        except KeyError:
+            self.set_status(404)
+            self.finish("Not found")
+            return
+        if item:
+            item["text"] = text
+        self.set_status(200)
+        self.finish("OK")
+        return
+
 
 def make_app():
     return tornado.web.Application([
         url(r"/", MainHandler),
+        url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler),
         url(r"/list/create", ListHandler),
         url(r"/list", ListHandler),
     ],
