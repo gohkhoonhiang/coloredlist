@@ -121,3 +121,51 @@ We need to create an instance of the application by calling the `make_app()` fun
 
 The server is started by `tornado.ioloop.IOLoop.current().start()`.
 
+
+## Templates
+
+It is a little messy to write the HTML code directly in the `MainHandler`'s `get` function. We will try to take this code out into a proper HTML file, and get the handler to render the HTML file.
+
+We first create the `main.html` file and put the exact HTML code into this file.
+
+```
+<!DOCTYPE html>    
+<html>
+<head>
+    <title>Colored List App</title>
+</head>
+<body>
+    <div id="page-wrap">
+        <div id="header">
+            <h1><a href="/">Colored List App</a></h1>
+            <div id="control">
+                <p><a href="/logout" class="button">Log Out</a>&nbsp;<a href="/account" class="button">Your Account</a></p>
+                <p><a href="/signup" class="button">Sign Up</a>&nbsp;<a href="/login" class="button">Log In</a></p>
+            </div>
+        </div>
+        <div id="ribbon">
+            Reminders
+            <ul>
+                <li>Your list automatically saves</li>
+                <li>Double-click list items to edit them</li>
+            </ul>
+        </div>
+        <div id="main">
+        </div>
+    </div>
+</body>
+</html>
+```
+
+To render this HTML file, we use the `render` method of the `RequestHandler` class.
+
+We replace the `get` method we wrote earlier with the following:
+
+```
+def get(self):
+    self.render("main.html")
+```
+
+Now the code looks much cleaner as we separate the view out of the logic code.
+
+
