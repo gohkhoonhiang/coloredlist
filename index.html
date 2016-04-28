@@ -28,7 +28,52 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <h1>
+          <h3>
+<a id="table-of-contents" class="anchor" href="#table-of-contents" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Table of Contents</h3>
+
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li>
+<a href="#getting-started">Getting Started</a>
+
+<ul>
+<li><a href="#virtual-environment">Virtual Environment</a></li>
+<li><a href="#installing-packages">Installing Packages</a></li>
+</ul>
+</li>
+<li>
+<a href="#creating-the-app">Creating the App</a>
+
+<ul>
+<li><a href="#the-main-application">The Main Application</a></li>
+<li><a href="#templates">Templates</a></li>
+</ul>
+</li>
+<li>
+<a href="#creating-the-list">Creating the List</a>
+
+<ul>
+<li><a href="#list-url-mapping">List URL Mapping</a></li>
+<li><a href="#in-memory-storage">In Memory Storage</a></li>
+<li><a href="#import-uuid">Import UUID</a></li>
+<li><a href="#list-template">List Template</a></li>
+<li><a href="#list-handler">List Handler</a></li>
+</ul>
+</li>
+<li>
+<a href="#edit-and-delete-list-items">Edit and Delete List Items</a>
+
+<ul>
+<li><a href="#list-item-url-mapping">List Item URL Mapping</a></li>
+<li><a href="#list-item-handler">List Item Handler</a></li>
+<li><a href="#importing-javascript">Importing Javascript</a></li>
+<li><a href="#edit-template">Edit Template</a></li>
+<li><a href="#ajax">AJAX</a></li>
+</ul>
+</li>
+</ul>
+
+<h1>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h1>
 
 <p>This is a prototype as part of learning Tornado framework. The idea and design of the app is based off <a href="https://css-tricks.com/app-from-scratch-1-design/">here</a>.</p>
@@ -42,6 +87,8 @@
 <p><em>Please feel free to file issues regarding the README if you find something inaccurate or unclear about the explanation. This is my first time writing a public tutorial and I have a lot to learn from anyone of you who care enough to read this. Thank you so much for your support.</em></p>
 
 <p><em>Also, please do file issues regarding the actual source code if you find the code does not comply with certain standards or if improvements are needed. I am still new to python and there will surely be coding style which I have not followed.</em></p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
 
 <h1>
 <a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting Started</h1>
@@ -63,6 +110,8 @@
 
 <p>You can read more about <code>virtualenv</code> <a href="https://virtualenv.readthedocs.org">here</a>.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
 <a id="installing-packages" class="anchor" href="#installing-packages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installing Packages</h2>
 
@@ -71,6 +120,8 @@
 <p>Run <code>pip install -r requirements.txt</code> to install the packages.</p>
 
 <p>You can read more about python package installation <a href="https://pip.pypa.io/en/stable/user_guide/">here</a>.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
 
 <h1>
 <a id="creating-the-app" class="anchor" href="#creating-the-app" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating the App</h1>
@@ -152,6 +203,8 @@ from tornado.web import url
 
 <p>The server is started by <code>tornado.ioloop.IOLoop.current().start()</code>.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
 <a id="templates" class="anchor" href="#templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Templates</h2>
 
@@ -197,6 +250,8 @@ from tornado.web import url
 
 <p>Now the code looks much cleaner as we separate the view out of the logic code.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h1>
 <a id="creating-the-list" class="anchor" href="#creating-the-list" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating the List</h1>
 
@@ -209,8 +264,10 @@ from tornado.web import url
 <li>Create a list item</li>
 </ul>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
-<a id="url-mapping" class="anchor" href="#url-mapping" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>URL Mapping</h2>
+<a id="list-url-mapping" class="anchor" href="#list-url-mapping" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List URL Mapping</h2>
 
 <p>For each of the functionalities above, we will design endpoints for the client to send the requests to.</p>
 
@@ -224,6 +281,8 @@ from tornado.web import url
     ],
     debug=True)
 </code></pre>
+
+<p><a href="#table-of-contents">Back to top</a></p>
 
 <h2>
 <a id="in-memory-storage" class="anchor" href="#in-memory-storage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>In Memory Storage</h2>
@@ -245,6 +304,8 @@ from tornado.web import url
 
 <p>We initialize some data first that we can display in the front-end.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
 <a id="import-uuid" class="anchor" href="#import-uuid" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Import UUID</h2>
 
@@ -252,6 +313,8 @@ from tornado.web import url
 
 <pre><code>import uuid
 </code></pre>
+
+<p><a href="#table-of-contents">Back to top</a></p>
 
 <h2>
 <a id="list-template" class="anchor" href="#list-template" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List Template</h2>
@@ -288,6 +351,8 @@ from tornado.web import url
 
 <p>This template should display a list of items in storage, and also provide a form to allow creating a new item which will be added to the in-memory storage.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
 <a id="list-handler" class="anchor" href="#list-handler" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List Handler</h2>
 
@@ -320,6 +385,8 @@ from tornado.web import url
 
 <p>We will realize that the list items are not sorted according to the order they are created. For that, we will need to devise some data strucutre and logic to handle the sorting later.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h1>
 <a id="edit-and-delete-list-items" class="anchor" href="#edit-and-delete-list-items" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Edit and Delete List Items</h1>
 
@@ -342,16 +409,20 @@ from tornado.web import url
 
 <p>Personally, I would prefer doing the first approach. I only need to main a single handler, while having the advantage of mapping the actions correctly to the methods: edit to <code>put</code> and delete to <code>delete</code>.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
-<a id="url-mapping-1" class="anchor" href="#url-mapping-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>URL Mapping</h2>
+<a id="list-item-url-mapping" class="anchor" href="#list-item-url-mapping" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List Item URL Mapping</h2>
 
 <p>For using the first approach, we will map the request URL as follows:</p>
 
 <pre><code>url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler),
 </code></pre>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
-<a id="list-handler-1" class="anchor" href="#list-handler-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List Handler</h2>
+<a id="list-item-handler" class="anchor" href="#list-item-handler" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List Item Handler</h2>
 
 <p>Since it is an edit action, we will map it to the <code>put</code> method of the <code>ListHandler</code>.</p>
 
@@ -381,6 +452,8 @@ from tornado.web import url
 
 <p>At the end of it, we will return a status of <code>200</code> and message <code>OK</code> to inform the client that the edit is done.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
 <a id="importing-javascript" class="anchor" href="#importing-javascript" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Importing Javascript</h2>
 
@@ -393,6 +466,8 @@ from tornado.web import url
 
 <p>We will add this <code>&lt;script&gt;</code> tag at the end of the page so that it does not slow down the page loading.</p>
 
+<p><a href="#table-of-contents">Back to top</a></p>
+
 <h2>
 <a id="edit-template" class="anchor" href="#edit-template" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Edit Template</h2>
 
@@ -404,6 +479,8 @@ from tornado.web import url
 <p>We have added a hidden field to store the <code>item_id</code>, put the item text in a text input field and created a link to submit the edit action.</p>
 
 <p>Note that we have created a unique ID for each input field as there may be multiple of such fields in the same list.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
 
 <h2>
 <a id="ajax" class="anchor" href="#ajax" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>AJAX</h2>
@@ -453,6 +530,8 @@ $(document).ready(function() {
 <p>Since we have defined a <code>put</code> method in the <code>ListHandler</code> to handle the edit function, we will set the call type to <code>PUT</code>. The data will be sent as a <code>json</code> data type and the data itself is constructed using the values from the input fields.</p>
 
 <p>Once the server returns a response, we will display an alert to inform the status.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
         </section>
 
         <aside id="sidebar">
