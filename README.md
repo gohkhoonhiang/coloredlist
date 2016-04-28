@@ -1,3 +1,26 @@
+### Table of Contents
+
+* [Introduction](#introduction)
+* [Getting Started](#getting-started)
+..* [Virtual Environment](#virtual-environment)
+..* [Installing Packages](#installing-packages)
+* [Creating the App](#creating-the-app)
+..* [The Main Application](#the-main-application)
+..* [Templates](#templates)
+* [Creating the List](#creating-the-list)
+..* [List URL Mapping](#list-url-mapping)
+..* [In Memory Storage](#in-memory-storage)
+..* [Import UUID](#import-uuid)
+..* [List Template](#list-template)
+..* [List Handler](#list-handler)
+* [Edit and Delete List Items](#edit-and-delete-list-items)
+..* [List Item URL Mapping](#list-item-url-mapping)
+..* [List Item Handler](#list-item-handler)
+..* [Importing Javascript](#importing-javascript)
+..* [Edit Template](#edit-template)
+..* [AJAX](#ajax)
+
+
 # Introduction
 
 This is a prototype as part of learning Tornado framework. The idea and design of the app is based off [here](https://css-tricks.com/app-from-scratch-1-design/).
@@ -11,6 +34,8 @@ Hopefully this will make it easier to follow the README and source code at diffe
 *Please feel free to file issues regarding the README if you find something inaccurate or unclear about the explanation. This is my first time writing a public tutorial and I have a lot to learn from anyone of you who care enough to read this. Thank you so much for your support.*
 
 *Also, please do file issues regarding the actual source code if you find the code does not comply with certain standards or if improvements are needed. I am still new to python and there will surely be coding style which I have not followed.*
+
+[Back to top](#table-of-contents)
 
 # Getting Started
 
@@ -30,6 +55,8 @@ You should see that your command prompt has `(venv)` in the prefix.
 
 You can read more about `virtualenv` [here](https://virtualenv.readthedocs.org).
 
+[Back to top](#table-of-contents)
+
 ## Installing Packages
 
 The packages required for getting started with developing this app is included in the `requirements.txt` file.
@@ -38,6 +65,7 @@ Run `pip install -r requirements.txt` to install the packages.
 
 You can read more about python package installation [here](https://pip.pypa.io/en/stable/user_guide/).
 
+[Back to top](#table-of-contents)
 
 # Creating the App
 
@@ -121,6 +149,7 @@ We need to create an instance of the application by calling the `make_app()` fun
 
 The server is started by `tornado.ioloop.IOLoop.current().start()`.
 
+[Back to top](#table-of-contents)
 
 ## Templates
 
@@ -168,6 +197,7 @@ def get(self):
 
 Now the code looks much cleaner as we separate the view out of the logic code.
 
+[Back to top](#table-of-contents)
 
 # Creating the List
 
@@ -177,8 +207,9 @@ We will start with just 2 simple functionalities for the list.
 * View the list
 * Create a list item
 
+[Back to top](#table-of-contents)
 
-## URL Mapping
+## List URL Mapping
 
 For each of the functionalities above, we will design endpoints for the client to send the requests to.
 
@@ -194,6 +225,7 @@ def make_app():
     debug=True)
 ```
 
+[Back to top](#table-of-contents)
 
 ## In Memory Storage
 
@@ -215,6 +247,7 @@ list_items = {
 
 We initialize some data first that we can display in the front-end.
 
+[Back to top](#table-of-contents)
 
 ## Import UUID
 
@@ -224,6 +257,7 @@ For the purpose of using `uuid` to generate a unique ID for each item, we need t
 import uuid
 ```
 
+[Back to top](#table-of-contents)
 
 ## List Template
 
@@ -260,6 +294,7 @@ For now we just want to make sure the data are displayed correctly with this str
 
 This template should display a list of items in storage, and also provide a form to allow creating a new item which will be added to the in-memory storage.
 
+[Back to top](#table-of-contents)
 
 ## List Handler
 
@@ -292,6 +327,7 @@ Once we are done with the storage, we will redirect to the `/list` page so that 
 
 We will realize that the list items are not sorted according to the order they are created. For that, we will need to devise some data strucutre and logic to handle the sorting later.
 
+[Back to top](#table-of-contents)
 
 # Edit and Delete List Items
 
@@ -312,8 +348,9 @@ However, we can easily use a form to send a `post` request for each actions, and
 
 Personally, I would prefer doing the first approach. I only need to main a single handler, while having the advantage of mapping the actions correctly to the methods: edit to `put` and delete to `delete`.
 
+[Back to top](#table-of-contents)
 
-## URL Mapping
+## List Item URL Mapping
 
 For using the first approach, we will map the request URL as follows:
 
@@ -321,8 +358,9 @@ For using the first approach, we will map the request URL as follows:
 url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler),
 ```
 
+[Back to top](#table-of-contents)
 
-## List Handler
+## List Item Handler
 
 Since it is an edit action, we will map it to the `put` method of the `ListHandler`.
 
@@ -353,6 +391,7 @@ If the item is found, then we just overwrite the `text` value.
 
 At the end of it, we will return a status of `200` and message `OK` to inform the client that the edit is done.
 
+[Back to top](#table-of-contents)
 
 ## Importing Javascript
 
@@ -366,6 +405,7 @@ We will use jQuery to help with handling the AJAX calls, so we will include this
 
 We will add this `<script>` tag at the end of the page so that it does not slow down the page loading.
 
+[Back to top](#table-of-contents)
 
 ## Edit Template
 
@@ -379,6 +419,7 @@ We have added a hidden field to store the `item_id`, put the item text in a text
 
 Note that we have created a unique ID for each input field as there may be multiple of such fields in the same list.
 
+[Back to top](#table-of-contents)
 
 ## AJAX
 
@@ -428,5 +469,7 @@ Once we have these data, we can now construct the URL and data for the AJAX call
 Since we have defined a `put` method in the `ListHandler` to handle the edit function, we will set the call type to `PUT`. The data will be sent as a `json` data type and the data itself is constructed using the values from the input fields.
 
 Once the server returns a response, we will display an alert to inform the status.
+
+[Back to top](#table-of-contents)
 
 
