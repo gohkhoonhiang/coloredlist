@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Coloredlist by gohkhoonhiang</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Coloredlist</h1>
+        <h2>A Tornado Tutorial App</h2>
+        <a href="https://github.com/gohkhoonhiang/coloredlist" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h1>
+
+<p>This is a prototype as part of learning Tornado framework. The idea and design of the app is based off <a href="https://css-tricks.com/app-from-scratch-1-design/">here</a>.</p>
+
+<p>I will attempt to write the README in tutorial style, as how I taught myself doing it from various sources.</p>
+
+<p>I will also try to commit the README and source code in accordance to the progress of the application.</p>
+
+<p>Hopefully this will make it easier to follow the README and source code at different stages.</p>
+
+<p><em>Please feel free to file issues regarding the README if you find something inaccurate or unclear about the explanation. This is my first time writing a public tutorial and I have a lot to learn from anyone of you who care enough to read this. Thank you so much for your support.</em></p>
+
+<p><em>Also, please do file issues regarding the actual source code if you find the code does not comply with certain standards or if improvements are needed. I am still new to python and there will surely be coding style which I have not followed.</em></p>
+
+<h1>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting Started</h1>
+
+<h2>
+<a id="virtual-environment" class="anchor" href="#virtual-environment" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Virtual Environment</h2>
+
+<p>As this is a python-based app, it is recommended to use <code>virtualenv</code> to contain the necessary packages for this project only.</p>
+
+<p>Run <code>pip install virtualenv</code> to install <code>virtualenv</code> if you don't already have the package.</p>
+
+<p>In the directory you have created for this project, run the command <code>virtualenv venv</code> to create the directory for the new environment. Replace <code>venv</code> with any name you wish.</p>
+
+<p><em>If you want to use python3 for the project, run <code>virtualenv -p python3 venv</code> instead. Make sure you already have python3 installed.</em></p>
+
+<p>To activate the environment, run the command <code>. venv/bin/activate</code> in the directory you have created <code>venv</code> directory.</p>
+
+<p>You should see that your command prompt has <code>(venv)</code> in the prefix.</p>
+
+<p>You can read more about <code>virtualenv</code> <a href="https://virtualenv.readthedocs.org">here</a>.</p>
+
+<h2>
+<a id="installing-packages" class="anchor" href="#installing-packages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installing Packages</h2>
+
+<p>The packages required for getting started with developing this app is included in the <code>requirements.txt</code> file.</p>
+
+<p>Run <code>pip install -r requirements.txt</code> to install the packages.</p>
+
+<p>You can read more about python package installation <a href="https://pip.pypa.io/en/stable/user_guide/">here</a>.</p>
+
+<h1>
+<a id="creating-the-app" class="anchor" href="#creating-the-app" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating the App</h1>
+
+<h2>
+<a id="the-main-application" class="anchor" href="#the-main-application" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The Main Application</h2>
+
+<p>We will start with a <code>app.py</code> file, which contains the basics of the application we want to create.</p>
+
+<p>For now, we will not care about the application structure. Our goal here is just to get it to work.</p>
+
+<p>We need to import some packages from the <code>tornado</code> framework.</p>
+
+<pre><code>import tornado.ioloop
+import tornado.web
+from tornado.web import url
+</code></pre>
+
+<p>We will use a function to create the application instead of writing it directly in the main code.</p>
+
+<pre><code>def make_app():
+    return tornado.web.Application([
+        url(r"/", MainHandler),
+    ],
+    debug=True)
+</code></pre>
+
+<p>We first define the main page URL and its handler. Whenever the client requests for <code>http://server:port/</code>, the <code>MainHandler</code> will handle the request and send the appropriate response.</p>
+
+<p>The <code>debug=True</code> setting is to run the application in debug mode.</p>
+
+<p>Now we will define the <code>MainHandler</code>.</p>
+
+<pre><code>class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write('''&lt;!DOCTYPE html&gt;    
+                    &lt;html&gt;
+                    &lt;head&gt;
+                        &lt;title&gt;Colored List App&lt;/title&gt;
+                    &lt;/head&gt;
+                    &lt;body&gt;
+                        &lt;div id="page-wrap"&gt;
+                            &lt;div id="header"&gt;
+                                &lt;h1&gt;&lt;a href="/"&gt;Colored List App&lt;/a&gt;&lt;/h1&gt;
+                                &lt;div id="control"&gt;
+                                    &lt;p&gt;&lt;a href="/logout" class="button"&gt;Log Out&lt;/a&gt;&amp;nbsp;&lt;a href="/account" class="button"&gt;Your Account&lt;/a&gt;&lt;/p&gt;
+                                    &lt;p&gt;&lt;a href="/signup" class="button"&gt;Sign Up&lt;/a&gt;&amp;nbsp;&lt;a href="/login" class="button"&gt;Log In&lt;/a&gt;&lt;/p&gt;
+                                &lt;/div&gt;
+                            &lt;/div&gt;
+                            &lt;div id="ribbon"&gt;
+                                Reminders
+                                &lt;ul&gt;
+                                    &lt;li&gt;Your list automatically saves&lt;/li&gt;
+                                    &lt;li&gt;Double-click list items to edit them&lt;/li&gt;
+                                &lt;/ul&gt;
+                            &lt;/div&gt;
+                            &lt;div id="main"&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                    &lt;/body&gt;
+                    &lt;/html&gt;''')
+</code></pre>
+
+<p>When the client requests for <code>http://server:port/</code>, it will be sent as a <code>GET</code> request, so this will be handled by the <code>MainHandler</code>'s <code>get</code> function.</p>
+
+<p>We will serve a HTML page as the response.</p>
+
+<p>Notice that I have injected some CSS classes and defined some IDs in the HTML elements. We will come to styling later.</p>
+
+<p>In order for the server to run, we need to define the main entry code.</p>
+
+<pre><code>if __name__ == '__main__':
+    app = make_app()
+    app.listen(9080)
+    tornado.ioloop.IOLoop.current().start()
+</code></pre>
+
+<p>We need to create an instance of the application by calling the <code>make_app()</code> function. Then I make it listen to port 9080. You can choose whichever port you wish.</p>
+
+<p>The server is started by <code>tornado.ioloop.IOLoop.current().start()</code>.</p>
+
+<h2>
+<a id="templates" class="anchor" href="#templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Templates</h2>
+
+<p>It is a little messy to write the HTML code directly in the <code>MainHandler</code>'s <code>get</code> function. We will try to take this code out into a proper HTML file, and get the handler to render the HTML file.</p>
+
+<p>We first create the <code>main.html</code> file and put the exact HTML code into this file.</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;    
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Colored List App&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id="page-wrap"&gt;
+        &lt;div id="header"&gt;
+            &lt;h1&gt;&lt;a href="/"&gt;Colored List App&lt;/a&gt;&lt;/h1&gt;
+            &lt;div id="control"&gt;
+                &lt;p&gt;&lt;a href="/logout" class="button"&gt;Log Out&lt;/a&gt;&amp;nbsp;&lt;a href="/account" class="button"&gt;Your Account&lt;/a&gt;&lt;/p&gt;
+                &lt;p&gt;&lt;a href="/signup" class="button"&gt;Sign Up&lt;/a&gt;&amp;nbsp;&lt;a href="/login" class="button"&gt;Log In&lt;/a&gt;&lt;/p&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div id="ribbon"&gt;
+            Reminders
+            &lt;ul&gt;
+                &lt;li&gt;Your list automatically saves&lt;/li&gt;
+                &lt;li&gt;Double-click list items to edit them&lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+        &lt;div id="main"&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>To render this HTML file, we use the <code>render</code> method of the <code>RequestHandler</code> class.</p>
+
+<p>We replace the <code>get</code> method we wrote earlier with the following:</p>
+
+<pre><code>def get(self):
+    self.render("main.html")
+</code></pre>
+
+<p>Now the code looks much cleaner as we separate the view out of the logic code.</p>
+
+<h1>
+<a id="creating-the-list" class="anchor" href="#creating-the-list" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating the List</h1>
+
+<p>We now have a basic structure application. It's time to start creating the list itself.</p>
+
+<p>We will start with just 2 simple functionalities for the list.</p>
+
+<ul>
+<li>View the list</li>
+<li>Create a list item</li>
+</ul>
+
+<h2>
+<a id="url-mapping" class="anchor" href="#url-mapping" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>URL Mapping</h2>
+
+<p>For each of the functionalities above, we will design endpoints for the client to send the requests to.</p>
+
+<p>In the <code>make_app()</code> method we created earlier, we will add a few more <code>URLSpec</code> objects for each endpoint.</p>
+
+<pre><code>def make_app():
+    return tornado.web.Application([
+        url(r"/", MainHandler),
+        url(r"/list/create", ListHandler),
+        url(r"/list", ListHandler),
+    ],
+    debug=True)
+</code></pre>
+
+<h2>
+<a id="in-memory-storage" class="anchor" href="#in-memory-storage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>In Memory Storage</h2>
+
+<p>For the time being, we will not use a persistent database for storage. Instead, we will create a in-memory storage for our list items.</p>
+
+<p>We will come to using persistent storage at a later stage. For now, our purpose is to get the logic working.</p>
+
+<p>We declare a global variable <code>list_items</code> that we will use as a in-memory storage for all the list items.</p>
+
+<p>We will define it as a dictionary where the item ID will be the key and the item definition is another dictionary that forms the value paired with the key.</p>
+
+<pre><code>list_items = {
+    "1":{"id":"1","text":"Walk the dog","color":"Red"},
+    "2":{"id":"2","text":"Pick up dry cleaning","color":"Blue"},
+    "3":{"id":"3","text":"Milk","color":"Green"},
+}
+</code></pre>
+
+<p>We initialize some data first that we can display in the front-end.</p>
+
+<h2>
+<a id="import-uuid" class="anchor" href="#import-uuid" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Import UUID</h2>
+
+<p>For the purpose of using <code>uuid</code> to generate a unique ID for each item, we need to remember to import the <code>uuid</code> module.</p>
+
+<pre><code>import uuid
+</code></pre>
+
+<h2>
+<a id="list-template" class="anchor" href="#list-template" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List Template</h2>
+
+<p>To help us visualize the data, let's create the <code>list.html</code> template file first.</p>
+
+<pre><code>&lt;ul&gt;
+{% for item_id in items %}
+    &lt;li class="{{ items[item_id]["color"] }}"&gt;
+        &lt;span&gt;{{ items[item_id]['text'] }}&lt;/span&gt;
+    &lt;/li&gt;
+{% end %}
+&lt;/ul&gt;
+
+&lt;form action="/list/create" method="post"&gt;
+    &lt;div&gt;
+        &lt;input type="text" id="new-list-item-text" name="text"&gt;
+        &lt;input type="submit" id="new-item-submit" value="Add" class="button"&gt;
+    &lt;/div&gt;
+&lt;/form&gt;
+</code></pre>
+
+<p>Notice something different is happening in this template. We have injected some python code in this template to help us display the list items.</p>
+
+<p>Since we are going to have a list of items, it is logical to have a loop control to display each item. This is where we use the <code>{% for item_id in items %}</code> construct.</p>
+
+<p>In our in-memory store, we use the item ID as the key for the item definition itself, so in order to access the item data, we will need to get the item dictionary and then the attribute.</p>
+
+<p>For example, we will use <code>{{ items[item_id]["text"] }}</code> to retrieve the text of the item with a specific <code>item_id</code>.</p>
+
+<p>We have not added all the <code>&lt;head&gt;</code> and <code>&lt;body&gt;</code> tags in this template, because we are going to make use of template inheritance later.</p>
+
+<p>For now we just want to make sure the data are displayed correctly with this structure.</p>
+
+<p>This template should display a list of items in storage, and also provide a form to allow creating a new item which will be added to the in-memory storage.</p>
+
+<h2>
+<a id="list-handler" class="anchor" href="#list-handler" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List Handler</h2>
+
+<p>We will not use the <code>MainHandler</code> for handling requests pertaining to the list. Instead, we will create a new <code>ListHandler</code> class for this purpose.</p>
+
+<p>For each of the functionalities, we assign a method in the <code>ListHandler</code> according to the HTTP method we allow for access.</p>
+
+<pre><code>class ListHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("list.html", items=list_items)
+
+    def post(self):
+        text = self.get_body_argument("text")
+        item_id = str(uuid.uuid4())
+        list_items[item_id] = {"id":item_id,"text":text,"color":"Blue"}
+        self.redirect("/list")
+</code></pre>
+
+<p>As the client requests for <code>http://server:port/list</code>, the <code>ListHandler</code>'s <code>get</code> method will render the <code>list.html</code> page.</p>
+
+<p>If the client enters some text in the form and hit the <code>Add</code> button, it will send a <code>POST</code> request containing the form data. The <code>ListHandler</code>'s <code>post</code> method will handle this request.</p>
+
+<p>First we will extract the text entered by the client by calling <code>self.get_body_argument("text")</code>. Note that all form data are accessible by <code>self.get_body_argument</code> method by passing in the input name as the method parameter.</p>
+
+<p>We will auto-generate a unique ID for this item by using <code>uuid.uuid4()</code> method.</p>
+
+<p>Then we create a new dictionary containing all the item data and add it to the in-memory <code>list_items</code> storage using the <code>item_id</code> as key.</p>
+
+<p>Once we are done with the storage, we will redirect to the <code>/list</code> page so that the changes can be reflected to the user.</p>
+
+<p>We will realize that the list items are not sorted according to the order they are created. For that, we will need to devise some data strucutre and logic to handle the sorting later.</p>
+
+<h1>
+<a id="edit-and-delete-list-items" class="anchor" href="#edit-and-delete-list-items" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Edit and Delete List Items</h1>
+
+<p>A list without the edit or delete functions are almost useless. We will now add these functionalities to our list.</p>
+
+<p>There can be a few ways to approach this problem.</p>
+
+<ol>
+<li>Continue using <code>ListHandler</code> and add the corresponding <code>put</code> and <code>delete</code> methods for editing and deleting list items.</li>
+<li>Create a separate <code>ListItemEditHandler</code> and <code>ListItemDeleteHandler</code> for editing and deleting list items.</li>
+</ol>
+
+<p>The first approach will be more compact due to having only a single handler. The methods also clearly reflects the purpose of the request, mapping edit to <code>put</code> and delete to <code>delete</code> methods.</p>
+
+<p>However, we cannot simply use a form for editing and deleting, because HTML <code>&lt;form&gt;</code> does not support <code>put</code> and <code>delete</code> methods. We will need to use AJAX for these actions.</p>
+
+<p>The second approach is more lengthy due to having to create 2 more handlers just for each of the actions.</p>
+
+<p>However, we can easily use a form to send a <code>post</code> request for each actions, and map to a <code>post</code> method within each handler.</p>
+
+<p>Personally, I would prefer doing the first approach. I only need to main a single handler, while having the advantage of mapping the actions correctly to the methods: edit to <code>put</code> and delete to <code>delete</code>.</p>
+
+<h2>
+<a id="url-mapping-1" class="anchor" href="#url-mapping-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>URL Mapping</h2>
+
+<p>For using the first approach, we will map the request URL as follows:</p>
+
+<pre><code>url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler),
+</code></pre>
+
+<h2>
+<a id="list-handler-1" class="anchor" href="#list-handler-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>List Handler</h2>
+
+<p>Since it is an edit action, we will map it to the <code>put</code> method of the <code>ListHandler</code>.</p>
+
+<pre><code>def put(self, item_id):
+    text = self.get_body_argument("text")
+    item = None
+    try:
+        item = list_items[item_id]
+    except KeyError:
+        self.set_status(404)
+        self.finish("Not found")
+        return
+    if item:
+        item["text"] = text
+    self.set_status(200)
+    self.finish("OK")
+    return
+</code></pre>
+
+<p>The <code>item_id</code> is already provided as a path argument. We only need to extract the <code>text</code> data from the request body by calling <code>self.get_body_argument</code> method.</p>
+
+<p>To do a little error handling, we will try to get the item data from the <code>list_items</code> dictionary, while catching <code>KeyError</code>.</p>
+
+<p>If <code>KeyError</code> is raised, then we will return a status of <code>404</code> and message <code>Not found</code> to inform the client of the error.</p>
+
+<p>If the item is found, then we just overwrite the <code>text</code> value.</p>
+
+<p>At the end of it, we will return a status of <code>200</code> and message <code>OK</code> to inform the client that the edit is done.</p>
+
+<h2>
+<a id="importing-javascript" class="anchor" href="#importing-javascript" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Importing Javascript</h2>
+
+<p>We can write plain Javascript for the AJAX calls, but I decide that it is best to use existing libraries to make our life easier.</p>
+
+<p>We will use jQuery to help with handling the AJAX calls, so we will include this following code in the <code>list.html</code> file.</p>
+
+<pre><code>&lt;script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>We will add this <code>&lt;script&gt;</code> tag at the end of the page so that it does not slow down the page loading.</p>
+
+<h2>
+<a id="edit-template" class="anchor" href="#edit-template" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Edit Template</h2>
+
+<p>Then, we will need to cater for editing by changing the <code>list.html</code> file. Previously we have a simple <code>&lt;span&gt;{{ items[item_id]['text'] }}&lt;/span&gt;</code> to display the item text. Now we need to make it editable.</p>
+
+<pre><code>&lt;span&gt;&lt;input type="hidden" id="edit-item-{{ item_id }}-id" value="{{ item_id }}"&gt;&lt;input type="text" id="edit-item-{{ item_id }}-text" name="text" value="{{ items[item_id]['text'] }}"&gt;&lt;a href="#" id="edit-item-{{ item_id }}-submit" class="button edit-button"&gt;Edit&lt;/a&gt;&lt;/span&gt;
+</code></pre>
+
+<p>We have added a hidden field to store the <code>item_id</code>, put the item text in a text input field and created a link to submit the edit action.</p>
+
+<p>Note that we have created a unique ID for each input field as there may be multiple of such fields in the same list.</p>
+
+<h2>
+<a id="ajax" class="anchor" href="#ajax" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>AJAX</h2>
+
+<p>Now we have the fields ready, we need to add in the logic to send the data to the server.</p>
+
+<p>Below the <code>&lt;script&gt;</code> tag that imports the jQuery source, we will create our customized Javascript that will perform the AJAX call.</p>
+
+<pre><code>&lt;script type="text/javascript"&gt;
+&lt;script type="text/javascript"&gt;
+$(document).ready(function() {
+    $('.edit-button').click(function() {
+        var itemSpan = $(this).parent();
+        var itemId = $(itemSpan).find("input[type='hidden']").val();
+        var text = $(itemSpan).find("input[name='text']").val();
+        var url = "/list/" + itemId + "/edit";
+        console.log(url);
+        $.ajax({
+            type: "PUT",
+            url: url,
+            dataType: "json",
+            data: {"id": itemId, "text": text},
+            statusCode: {
+                200: function(xhr) {
+                    alert("Item updated successfully");
+                },
+                404: function(xhr) {
+                    alert("Item ID not found");
+                },
+            },
+        });
+    });
+});
+&lt;/script&gt;
+</code></pre>
+
+<p>There is quite a lot going on in this segment of code.</p>
+
+<p>First, we attach the <code>click</code> event to all the elements with the class <code>edit-button</code>. In this case, it will be all the <code>&lt;a&gt;</code> tags for each list item.</p>
+
+<p>Once the <code>click</code> event is triggered, we will try to extract the data we require.</p>
+
+<p>We get the parent <code>&lt;span&gt;</code> containing the <code>&lt;a&gt;</code> being clicked. This allows us to extract the element containing the <code>item_id</code> and <code>text</code> of the item.</p>
+
+<p>Once we have these data, we can now construct the URL and data for the AJAX call.</p>
+
+<p>Since we have defined a <code>put</code> method in the <code>ListHandler</code> to handle the edit function, we will set the call type to <code>PUT</code>. The data will be sent as a <code>json</code> data type and the data itself is constructed using the values from the input fields.</p>
+
+<p>Once the server returns a response, we will display an alert to inform the status.</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/gohkhoonhiang/coloredlist/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/gohkhoonhiang/coloredlist/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/gohkhoonhiang/coloredlist"></a> is maintained by <a href="https://github.com/gohkhoonhiang">gohkhoonhiang</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
