@@ -1,14 +1,8 @@
 import tornado.ioloop
 import tornado.web
 from tornado.web import url
-import uuid
-
-
-list_items = {
-    "1":{"id":"1","text":"Walk the dog","color":"Red"},
-    "2":{"id":"2","text":"Pick up dry cleaning","color":"Blue"},
-    "3":{"id":"3","text":"Milk","color":"Green"},
-}
+from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -17,43 +11,68 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 class ListHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
     def get(self):
-        self.render("list.html", items=list_items)
+        list_items = self.db['lists']
+        items = [item for item in list_items.find()]
+        self.render("list.html", items=items)
 
     def post(self):
+        list_items = self.db['lists']
         text = self.get_body_argument("text")
-        item_id = str(uuid.uuid4())
-        list_items[item_id] = {"id":item_id,"text":text,"color":"Blue"}
+        list_items.insert_one({'text':text, 'color':'Blue'})
         self.redirect("/list")
 
     def put(self, item_id):
+        list_items = self.db['lists']
         text = self.get_body_argument("text")
-        item = None
-        try:
-            item = list_items[item_id]
-        except KeyError:
+        item = list_items.find_one({'_id':ObjectId(item_id)})
+        if item:
+            list_items.update_one({'_id':ObjectId(item_id)}, {'$set':{'text':text}})
+            self.set_status(200)
+            self.finish("OK")
+            return
+        else:
             self.set_status(404)
             self.finish("Not found")
             return
+
+    def delete(self, item_id):
+        list_items = self.db['lists']
+        item = list_items.find_one({'_id':ObjectId(item_id)})
         if item:
-            item["text"] = text
-        self.set_status(200)
-        self.finish("OK")
-        return
+            list_items.remove({'_id':ObjectId(item_id)})
+            self.set_status(200)
+            self.finish("OK")
+            return
+        else:
+            self.set_status(404)
+            self.finish("Not found")
+            return
 
 
-def make_app():
+def create_db():
+    client = MongoClient("localhost",27017)
+    db = client['coloredlistdb']
+    return db
+    
+
+def make_app(db):
     return tornado.web.Application([
         url(r"/", MainHandler),
-        url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler),
-        url(r"/list/create", ListHandler),
-        url(r"/list", ListHandler),
+        url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
+        url(r"/list/([0-9a-zA-Z\-]+)/delete", ListHandler, dict(db=db)),
+        url(r"/list/create", ListHandler, dict(db=db)),
+        url(r"/list", ListHandler, dict(db=db)),
     ],
     debug=True)
 
 
 if __name__ == '__main__':
-    app = make_app()
+    db = create_db()
+    app = make_app(db)
     app.listen(9080)
     tornado.ioloop.IOLoop.current().start()
 

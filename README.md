@@ -19,6 +19,12 @@
   * [Importing Javascript](#importing-javascript)
   * [Edit Template](#edit-template)
   * [AJAX](#ajax)
+* [Persistent Storage](#persistent-storage)
+  * [pymongo](#pymongo)
+  * [Setting Up Database](#setting-up-database)
+  * [Make Database](#make-database)
+  * [Using Database](#using-database)
+  * [List Template with New Data Structure](#list-template-with-new-data-structure)
 
 
 # Introduction
@@ -472,4 +478,266 @@ Once the server returns a response, we will display an alert to inform the statu
 
 [Back to top](#table-of-contents)
 
+# Persistent Storage
+
+So far we have been using a in-memory storage for our list items. For this application to be useful, we need to persist the list data so that users can re-visit the list another day and the data will still be available.
+
+Now we will look at how to integrate persistent storage in the application.
+
+[Back to top](#table-of-contents)
+
+## pymongo
+
+There are a few databases that we can use for our application. I have chosen [MongoDB](https://www.mongodb.org/) for the simple reason that I want to learn how to use a NoSQL database. Please visit the official docs to learn how to setup a MongoDB instance on your machine for testing purpose.
+
+In order to use Tornado with MongoDB, we need to have a database driver called [pymongo](http://api.mongodb.org/python/current/index.html).
+
+We will add `pymongo==3.2.2` to our `requirements.txt` file so that we can install the module using pip.
+
+After adding this line, don't forget to run the command `pip install -r requirements.txt` so that the pymongo package is installed.
+
+[Back to top](#table-of-contents)
+
+## Setting Up Database
+
+After installing MongoDB and pymongo, we need to setup the database for our application's use.
+
+We create a new database called `coloredlistdb` and create a new collection `lists`.
+
+First, we run the `mongo` command to enter the MongoDB shell.
+
+```
+> mongo
+MongoDB shell version: 3.2.5
+connecting to: test
+Welcome to the MongoDB shell.
+For interactive help, type "help".
+For more comprehensive documentation, see
+    http://docs.mongodb.org/
+Questions? Try the support group
+    http://groups.google.com/group/mongodb-user
+```
+
+At this point, there is no database created yet, so we run the following command to initialize a database for `coloredlistdb`.
+
+```
+> use coloredlistdb
+switched to db coloredlistdb
+```
+
+We will create a new collection to store our list items by running the following command.
+
+```
+> db.createCollection("lists")
+{ "ok" : 1 }
+```
+
+We also initialize some data in the collection so that our application will display some items on first run.
+
+```
+> db.lists.insert({
+... text:'Walk the dog',
+... color:'Red'
+... })
+WriteResult({ "nInserted" : 1 })
+> db.lists.insert({
+... text:'Pick up dry cleaning',
+... color:'Blue'
+... })
+WriteResult({ "nInserted" : 1 })
+> db.lists.insert({
+... text:'Milk',
+... color:'Green'
+... })
+WriteResult({ "nInserted" : 1 })
+```
+
+To verify all the items have been inserted, we run the following command:
+
+```
+> db.lists.find()
+{ "_id" : ObjectId("57220c6dcbe425b0c391538e"), "text" : "Walk the dog", "color" : "Red" }
+{ "_id" : ObjectId("57220ccfcbe425b0c391538f"), "text" : "Pick up dry cleaning", "color" : "Blue" }
+{ "_id" : ObjectId("57220cdccbe425b0c3915390"), "text" : "Milk", "color" : "Green" }
+```
+
+Notice that we have changed the data structure for list item. A MongoDB collection is analogous to a RDBMS table, each collection contains multiple documents, which is in turn analagous to RDBMS table rows. In MongoDB, each document is represented similar to JSON object.
+
+For the purpose of our list items, we will define our data structure as follows:
+
+```
+{
+    "_id" : item_id,
+    "text" : item_text,
+    "color" : item_color
+}
+```
+
+[Back to top](#table-of-contents)
+
+## Make Database
+
+We can now start using the database from the application itself.
+
+First of all, we need to import the required modules to use the pymongo driver.
+
+```
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+```
+
+We are going to use the `ObjectId` class for setting the item ID, so we can remove the `import uuid` statement.
+
+Then we create a method to initialize the database and return the database object.
+
+```
+def create_db():
+    client = MongoClient("localhost",27017)
+    db = client['coloredlistdb']
+    return db
+```
+
+In this method, we create a `MongoClient` that connects to `localhost` port `27017`.
+
+Then we get the database of the name `coloredlistdb` as we have created earlier.
+
+We will pass the database object to various request handlers for data storage and retrieval.
+
+Since we create our URLSpec in the `make_app` method, we will pass the database object to the method in the main code.
+
+```
+if __name__ == '__main__':
+    db = create_db()
+    app = make_app(db)
+```
+
+Inside the `make_app` method, we will pass the database object to each URLSpec as follows:
+
+```
+def make_app(db):
+    return tornado.web.Application([
+        url(r"/", MainHandler),
+        url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
+        url(r"/list/([0-9a-zA-Z\-]+)/delete", ListHandler, dict(db=db)),
+        url(r"/list/create", ListHandler, dict(db=db)),
+        url(r"/list", ListHandler, dict(db=db)),
+    ],
+    debug=True)
+```
+
+Then inside the `ListHandler` class, we need to add a `initialize` method to accept the database object and assign to its own `db` variable.
+
+```
+def initialize(self, db):
+    self.db = db
+```
+
+[Back to top](#table-of-contents)
+
+## Using Database
+
+Since now that we have the database object in the `ListHandler`, we no longer use the in-memory storage.
+
+Instead, we will get the list by calling `self.db['lists']`.
+
+We will need to update all `get`, `post`, `put` and `delete` methods to use this database object.
+
+```
+def get(self):
+    list_items = self.db['lists']
+    items = [item for item in list_items.find()]
+    self.render("list.html", items=items)
+
+def post(self):
+    list_items = self.db['lists']
+    text = self.get_body_argument("text")
+    list_items.insert_one({'text':text, 'color':'Blue'})
+    self.redirect("/list")
+
+def put(self, item_id):
+    list_items = self.db['lists']
+    text = self.get_body_argument("text")
+    item = list_items.find_one({'_id':ObjectId(item_id)})
+    if item:
+        list_items.update_one({'_id':ObjectId(item_id)}, {'$set':{'text':text}})
+        self.set_status(200)
+        self.finish("OK")
+        return
+    else:
+        self.set_status(404)
+        self.finish("Not found")
+        return
+
+def delete(self, item_id):
+    list_items = self.db['lists']
+    item = list_items.find_one({'_id':ObjectId(item_id)})
+    if item:
+        list_items.remove({'_id':ObjectId(item_id)})
+        self.set_status(200)
+        self.finish("OK")
+        return
+    else:
+        self.set_status(404)
+        self.finish("Not found")
+        return
+```
+
+Let's break it down a little and explain some of the new code.
+
+In the `get` method, we get the collection object by calling `self.db['lists']`. To retrieve the documents, we need to get a cursor to the dataset by calling `list_items.find`, which is like a iterator to the documents. We use list comprehension construct `[item for item in list_items.find()]` to collect the documents into a list that can be used to render the `list.html` page.
+
+For the `post` method, we will call the list_items.insert_one` method, passing in the dictionary containing the item text and color as parameter. The `_id` field will be automatically generated.
+
+For the `put` method, we will first call `list_items.find_one` and pass in the `ObjectId(item_id)` as the query filter. This will return us only one result or none. If the result is not none, then we will update the collection and setting a new `text value for the document with `_id` `ObjectId(item_id)`.
+
+Finally in the `delete` method, similar to the `put` method, we first query the collection to get the document with the same `ObjectId(item_id)`, then we simply call `list_items.remove` to delete the document from the collection.
+
+Notice that we cannot simply pass the plain `item_id` string as the `_id` value, instead, we need to create a new `ObjectId` object with the `item_id`.
+
+[Back to top](#table-of-contents)
+
+## List Template with New Data Structure
+
+Since we have changed the data structure of the list item, we also need to update the list view to reflect the changes.
+
+```
+{% for item in items %}
+    <li class="{{ item["color"] }}">
+        <span><input type="hidden" id="edit-item-{{ item['_id'] }}-id" value="{{ item['_id'] }}"><input type="text" id="edit-item-{{ item['_id'] }}-text" name="text" value="{{ item['text'] }}"><a href="#" id="edit-item-{{ item['_id'] }}-submit" class="button edit-button">Edit</a><a href="#" id="delete-item-{{ item['_id'] }}-submit" class="button delete-button">Delete</a></span>
+    </li>
+{% end %}
+```
+
+Instead of iterating through the IDs as in the earlier version, we now can iterate through the list of items directly.
+
+To access the `text` and `value` attributes, we just call `item['text']` or `item['color']`.
+
+Previously, we have not included the `Delete` function. Now we will add the AJAX call for deleting the item. It is similar in structure to the edit AJAX call, except that here we are using type `DELETE` and there is no need to send any data in the request.
+
+```
+$('.delete-button').click(function() {
+    var itemSpan = $(this).parent();
+    var itemId = $(itemSpan).find("input[type='hidden']").val();
+    var text = $(itemSpan).find("input[name='text']").val();
+    var url = "/list/" + itemId + "/delete";
+    console.log(url);
+    $.ajax({
+        type: "DELETE",
+        url: url,
+        dataType: "json",
+        data: {},
+        statusCode: {
+            200: function(xhr) {
+                alert("Item deleted successfully");
+                window.location.href = "/list";
+            },
+            404: function(xhr) {
+                alert("Item ID not found");
+            },
+        },
+    });
+});
+```
+
+[Back to top](#table-of-contents)
 
