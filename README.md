@@ -25,6 +25,8 @@
   * [Make Database](#make-database)
   * [Using Database](#using-database)
   * [List Template with New Data Structure](#list-template-with-new-data-structure)
+* [Structuring the App](#structuring-the-app)
+  * [Static Content](#static-content)
 
 
 # Introduction
@@ -741,3 +743,107 @@ $('.delete-button').click(function() {
 
 [Back to top](#table-of-contents)
 
+# Structuring the App
+
+Now we have a functional app where we can list items, add new item, edit and remove existing item.
+
+However, the current structure is not the most ideal one. We have embedded Javascript directly in the `list.html` file, which makes it more difficult to maintain, and we cannot make use of caching to make our page load faster.
+
+Ideally, we want to separate HTML, Javascript and CSS scripts into separate files, so that the browsers can cache unchanged `.js` and `.css` files, making page loading faster.
+
+In the following sections, we will go through how to separate our Javascripts from the HTML pages.
+
+[Back to top](#table-of-contents)
+
+## Static Content
+
+It is a common practice to create a `static` directory, containing `js`, `css` and `img` sub-directories. Each of these directories will contain Javascript, CSS and image files.
+
+Then inside our HTML page, we will include them by using tags like `<script src=""></script>` for Javascript and `<link href="">` for CSS.
+
+For our app, we will create `static` in the same directory as `app.py`, and contain `js`, `css` and `img` sub-directories like this:
+
+```
++-- coloredlist/
+|   +-- app.py
+|   +-- static/
+|   |   +-- css/
+|   |   +-- img/
+|   |   +-- js/
+```
+
+Then, we will create a new file `list.js` under the `static/js` directory, and extract the Javascript from `list.html` into this new file.
+
+### `list.js`
+
+```
+$(document).ready(function() {
+    $('.edit-button').click(function() {
+        var itemSpan = $(this).parent();
+        var itemId = $(itemSpan).find("input[type='hidden']").val();
+        var text = $(itemSpan).find("input[name='text']").val();
+        var url = "/list/" + itemId + "/edit";
+        console.log(url);
+        $.ajax({
+            type: "PUT",
+            url: url,
+            dataType: "json",
+            data: {"id": itemId, "text": text},
+            statusCode: {
+                200: function(xhr) {
+                    alert("Item updated successfully");
+                },
+                404: function(xhr) {
+                    alert("Item ID not found");
+                },
+            },
+        });
+    });
+    $('.delete-button').click(function() {
+        var itemSpan = $(this).parent();
+        var itemId = $(itemSpan).find("input[type='hidden']").val();
+        var text = $(itemSpan).find("input[name='text']").val();
+        var url = "/list/" + itemId + "/delete";
+        console.log(url);
+        $.ajax({
+            type: "DELETE",
+            url: url,
+            dataType: "json",
+            data: {},
+            statusCode: {
+                200: function(xhr) {
+                    alert("Item deleted successfully");
+                    window.location.href = "/list";
+                },
+                404: function(xhr) {
+                    alert("Item ID not found");
+                },
+            },
+        });
+    });
+});
+```
+
+### `list.html`
+
+```
+<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+<script src="{{ static_url('js/list.js') }}"></script>
+```
+
+Notice that we are using `static_url()` for the `list.js` URL formation, which will return the `list.js` relative to the static file path defined in our application as follows:
+
+```
+def make_app(db):
+    return tornado.web.Application([
+        url(r"/", MainHandler),
+        url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
+        url(r"/list/([0-9a-zA-Z\-]+)/delete", ListHandler, dict(db=db)),
+        url(r"/list/create", ListHandler, dict(db=db)),
+        url(r"/list", ListHandler, dict(db=db)),
+    ],
+    debug=True,
+    static_path=os.path.join(os.path.dirname(__file__), "static"))
+```
+
+[Back to top](#table-of-contents)

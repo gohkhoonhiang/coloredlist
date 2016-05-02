@@ -3,6 +3,7 @@ import tornado.web
 from tornado.web import url
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+import os
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -67,7 +68,8 @@ def make_app(db):
         url(r"/list/create", ListHandler, dict(db=db)),
         url(r"/list", ListHandler, dict(db=db)),
     ],
-    debug=True)
+    debug=True,
+    static_path=os.path.join(os.path.dirname(__file__), "static"))
 
 
 if __name__ == '__main__':
