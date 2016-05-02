@@ -922,11 +922,11 @@ For example, now we can extend `base.html` in `list.html` like this:
 {% end %}
 ```
 
-First, we need to indicate that we are extending from `base.html` by the expression `{% extends "templates/base.html" %}.
+First, we need to indicate that we are extending from `base.html` by the expression `{% extends "templates/base.html" %}`.
 
 Then we indicate that we will extend the `{% block content %}` block by including our original `list.html` markup under `{% block content %}{% end %}` block.
 
-When we load our `/list` page, we will have all the markup from `base.html` including `<div class="header">` and `<div class="ribbon">`, followed by the `{% block content %} block, which will include `<ul>` and `<form>`.
+When we load our `/list` page, we will have all the markup from `base.html` including `<div class="header">` and `<div class="ribbon">`, followed by the `{% block content %}` block, which will include `<ul>` and `<form>`.
 
 The advantage of template inheritance is that we don't need to copy-paste the header and footer everytime we create a new page with the same look-and-feel.
 
