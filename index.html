@@ -976,11 +976,11 @@ def delete(self, item_id):
 {% end %}
 </code></pre>
 
-<p>First, we need to indicate that we are extending from <code>base.html</code> by the expression `{% extends "templates/base.html" %}.</p>
+<p>First, we need to indicate that we are extending from <code>base.html</code> by the expression <code>{% extends "templates/base.html" %}</code>.</p>
 
 <p>Then we indicate that we will extend the <code>{% block content %}</code> block by including our original <code>list.html</code> markup under <code>{% block content %}{% end %}</code> block.</p>
 
-<p>When we load our <code>/list</code> page, we will have all the markup from <code>base.html</code> including <code>&lt;div class="header"&gt;</code> and <code>&lt;div class="ribbon"&gt;</code>, followed by the <code>{% block content %} block, which will include</code></p><ul><code>and</code></ul>`.
+<p>When we load our <code>/list</code> page, we will have all the markup from <code>base.html</code> including <code>&lt;div class="header"&gt;</code> and <code>&lt;div class="ribbon"&gt;</code>, followed by the <code>{% block content %}</code> block, which will include <code>&lt;ul&gt;</code> and <code>&lt;form&gt;</code>.</p>
 
 <p>The advantage of template inheritance is that we don't need to copy-paste the header and footer everytime we create a new page with the same look-and-feel.</p>
 
