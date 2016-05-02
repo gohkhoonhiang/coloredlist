@@ -78,6 +78,7 @@
 
 <ul>
 <li><a href="#static-content">Static Content</a></li>
+<li><a href="#template-inheritance">Template Inheritance</a></li>
 </ul>
 </li>
 </ul>
@@ -901,6 +902,87 @@ def delete(self, item_id):
     debug=True,
     static_path=os.path.join(os.path.dirname(__file__), "static"))
 </code></pre>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="template-inheritance" class="anchor" href="#template-inheritance" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Template Inheritance</h2>
+
+<p>Previously we made a note about template inheritance when we were making the list page. Now we have finally come to this part where we are going to make some base templates that can be extended by various pages.</p>
+
+<p>First of all, we need to create a new directory <code>templates</code> in the same directory as <code>app.py</code>. Then we create a new file called <code>base.html</code>.</p>
+
+<p>Basically what this file will contain is the entire HTML markup of <code>main.html</code> with some additions.</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;    
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Colored List App&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id="page-wrap"&gt;
+        &lt;div id="header"&gt;
+            &lt;h1&gt;&lt;a href="/"&gt;Colored List App&lt;/a&gt;&lt;/h1&gt;
+            &lt;div id="control"&gt;
+                &lt;p&gt;&lt;a href="/logout" class="button"&gt;Log Out&lt;/a&gt;&amp;nbsp;&lt;a href="/account" class="button"&gt;Your Account&lt;/a&gt;&lt;/p&gt;
+                &lt;p&gt;&lt;a href="/signup" class="button"&gt;Sign Up&lt;/a&gt;&amp;nbsp;&lt;a href="/login" class="button"&gt;Log In&lt;/a&gt;&lt;/p&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div id="ribbon"&gt;
+            Reminders
+            &lt;ul&gt;
+                &lt;li&gt;Your list automatically saves&lt;/li&gt;
+                &lt;li&gt;Double-click list items to edit them&lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/div&gt;
+        &lt;div id="main"&gt;
+        {% block content %}
+        {% end %}
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>Under <code>&lt;div id="main"&gt;</code>, we add the Python expressions:</p>
+
+<pre><code>{% block content %}
+{% end %}
+</code></pre>
+
+<p>This allow us to extend the <code>base.html</code> template and put various page contents within this <code>div</code>.</p>
+
+<p>For example, now we can extend <code>base.html</code> in <code>list.html</code> like this:</p>
+
+<pre><code>{% extends "templates/base.html" %}
+{% block content %}
+&lt;ul&gt;
+{% for item in items %}
+    &lt;li class="{{ item["color"] }}"&gt;
+        &lt;span&gt;&lt;input type="hidden" id="edit-item-{{ item['_id'] }}-id" value="{{ item['_id'] }}"&gt;&lt;input type="text" id="edit-item-{{ item['_id'] }}-text" name="text" value="{{ item['text'] }}"&gt;&lt;a href="#" id="edit-item-{{ item['_id'] }}-submit" class="button edit-button"&gt;Edit&lt;/a&gt;&lt;a href="#" id="delete-item-{{ item['_id'] }}-submit" class="button delete-button"&gt;Delete&lt;/a&gt;&lt;/span&gt;
+    &lt;/li&gt;
+{% end %}
+&lt;/ul&gt;
+
+&lt;form action="/list/create" method="post"&gt;
+    &lt;div&gt;
+        &lt;input type="text" id="new-list-item-text" name="text"&gt;
+        &lt;input type="submit" id="new-item-submit" value="Add" class="button"&gt;
+    &lt;/div&gt;
+&lt;/form&gt;
+
+&lt;script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="{{ static_url('js/list.js') }}"&gt;&lt;/script&gt;
+{% end %}
+</code></pre>
+
+<p>First, we need to indicate that we are extending from <code>base.html</code> by the expression `{% extends "templates/base.html" %}.</p>
+
+<p>Then we indicate that we will extend the <code>{% block content %}</code> block by including our original <code>list.html</code> markup under <code>{% block content %}{% end %}</code> block.</p>
+
+<p>When we load our <code>/list</code> page, we will have all the markup from <code>base.html</code> including <code>&lt;div class="header"&gt;</code> and <code>&lt;div class="ribbon"&gt;</code>, followed by the <code>{% block content %} block, which will include</code></p><ul><code>and</code></ul>`.
+
+<p>The advantage of template inheritance is that we don't need to copy-paste the header and footer everytime we create a new page with the same look-and-feel.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
