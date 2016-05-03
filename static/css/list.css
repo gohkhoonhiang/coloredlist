@@ -1,0 +1,17 @@
+/*
+    LISTS
+*/
+#list { list-style: none; }
+#list li { position: relative; margin: 0 0 8px 0; padding: 0 0 0 70px; width: 607px; }
+#list li span { padding: 2px; -moz-border-radius: 5px; -webkit-border-radius: 5px; width: 589px; display: block; position: relative; }
+
+/*
+    FORM STUFF
+*/
+label { background: #999; color: white; padding: 3px; }
+input[type="text"], input[type="password"] { width: 324px; border: 3px solid #999; font-size: 18px; padding: 7px; }
+#add-new input[type="text"] { width: 532px; float: left; margin: 0 10px 0 69px; }
+#add-new input[type="text"]:focus { border-color: #73B8BF; }
+#add-new input[type="submit"] { padding: 10px 12px; }
+
+ul#list li span input[style] { width: 90% !important; }

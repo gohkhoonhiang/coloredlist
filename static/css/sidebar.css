@@ -1,0 +1,7 @@
+/*
+    SIDEBAR
+*/
+#ribbon { position: absolute; right: 0; width: 125px; padding: 60px 30px 0 47px; height: 756px; top: -6px; }
+
+#ribbon ul { list-style: none; }
+#ribbon ul li { background: rgba(0,0,0,0.8); color: white; padding: 5px; margin: 0 0 5px 0; font-size: 12px; }

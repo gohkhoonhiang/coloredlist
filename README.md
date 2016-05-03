@@ -33,6 +33,8 @@
   * [DB Settings](#db-settings)
   * [URL Patterns](#url-patterns)
   * [Final Structure](#final-structure)
+* [Styling the App](#styling-the-app)
+  * [Basic CSS](#basic-css)
 
 
 # Introduction
@@ -1191,5 +1193,81 @@ At the end of all the restructuring, we should have achieved our desired structu
 ```
 
 This may not be the best structure for a Tornado app, but we will improve on it as we add in more advanced features.
+
+[Back to top](#table-of-contents)
+
+# Styling the App
+
+Since this is mainly a Tornado tutorial, I'm not going to focus much on styling the app. My purpose here is just to learn how to incorporate CSS files into my templates, so I'm going to take almost every CSS defined from the [sample](https://css-tricks.com/app-from-scratch-4-html-css/) and tweak such that there is no loading errors.
+
+The end product is not going to look very nice, but that's really not our main concern here.
+
+[Back to top](#table-of-contents)
+
+## Basic CSS
+
+Remember we have created our `static/css` folder earlier? Now we can put it into some use. Inside the directory, we will create 3 files, `main.css`, `list.css` and `sidebar.css`.
+
+### `main.css`
+
+Due to the file being quite loaded, I'm going to just extract a few lines here. For the complete CSS file, please refer to the source code.
+
+```
+* { margin: 0; padding: 0; }
+body { font: 14px/1.1 Helvetica, Sans-Serif; }
+.clear { clear: both; }
+img, a img { border: none; }
+input { outline: none; }
+```
+
+### `list.css`
+
+```
+#list { list-style: none; }
+#list li { position: relative; margin: 0 0 8px 0; padding: 0 0 0 70px; width: 607px; }
+#list li span { padding: 2px; -moz-border-radius: 5px; -webkit-border-radius: 5px; width: 589px; display: block; position: relative; }
+```
+
+### `sidebar.css`
+
+```
+#ribbon { position: absolute; right: 0; width: 125px; padding: 60px 30px 0 47px; height: 756px; top: -6px; }
+
+#ribbon ul { list-style: none; }
+#ribbon ul li { background: rgba(0,0,0,0.8); color: white; padding: 5px; margin: 0 0 5px 0; font-size: 12px; }
+```
+
+Then, we need to import the CSS files within the HTML templates like this:
+
+### `base.html`
+
+```
+<head>
+    <title>Colored List App</title>
+    <link rel="stylesheet" href="{{ static_url('css/main.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/sidebar.css') }}">
+</head>
+```
+
+### `list.html`
+
+```
+{% block content %}
+<link rel="stylesheet" href="{{ static_url('css/list.css') }}">
+<ul id="list">
+...
+</ul>
+<form id="add-new" action="/list/create" method="post">
+    <div>
+        <input type="text" id="new-list-item-text" name="text">
+        <input type="submit" id="new-item-submit" value="Add" class="button">
+    </div>
+</form>
+{% end %}
+```
+
+Note that for `list.html`, we have added an `id` attribute for the list `ul` element and `form` element. This is so that we can style them using our newly created stylesheets.
+
+Now our app should have basic styling, although it most likely isn't very pleasant.
 
 [Back to top](#table-of-contents)
