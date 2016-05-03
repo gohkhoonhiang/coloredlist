@@ -30,6 +30,7 @@
   * [Template Inheritance](#template-inheritance)
   * [Handlers Module](#handlers-module)
   * [App Settings](#app-settings)
+  * [DB Settings](#db-settings)
 
 
 # Introduction
@@ -1079,5 +1080,41 @@ if __name__ == '__main__':
 ```
 
 By separating the settings and options from our application, we can make changes to the settings and options without having to change the `app.py` directly. It gives us the flexibility to deploy the application on different servers and using different databases by just dealing with `settings.py` file.
+
+[Back to top](#table-of-contents)
+
+## DB Settings
+
+Since I've mentioned about using different databases for our app, we might as well make our app database-independent, meaning we shouldn't be tied to using only MongoDB, but have the option to use MySQL or PostgreSQL or whichever database deemed appropriate. For this, we have to restructure how we define our `db` object. Instead of creating the `db` object inside `app.py`, we will create a separate `db.py` under the same directory as `app.py`, where we will create a `db` object for our application's use.
+
+```
+from pymongo import MongoClient
+from tornado.options import options
+
+
+def create_db():
+    client = MongoClient(options.dbhost, options.dbport)
+    db = client[options.dbname]
+    return db
+    
+db = create_db()
+```
+
+Then, we will remove the `create_db` function from `app.py`, and instead do a import of the `db` object:
+
+```
+from db import db
+```
+
+We can also remove the call to `create_db` in our main code:
+
+```
+if __name__ == '__main__':
+    app = make_app()
+    app.listen(options.port)
+    tornado.ioloop.IOLoop.current().start()
+```
+
+We are not yet ready to be database-independent, but we will come to creating a database wrapper in a while.
 
 [Back to top](#table-of-contents)

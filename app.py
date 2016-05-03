@@ -1,21 +1,14 @@
 import tornado.ioloop
 import tornado.web
 from tornado.web import url
-from pymongo import MongoClient
-import os
 from handlers.main import MainHandler
 from handlers.list import ListHandler
 from settings import settings
 from tornado.options import options
+from db import db
 
 
-def create_db():
-    client = MongoClient(options.dbhost, options.dbport)
-    db = client[options.dbname]
-    return db
-    
-
-def make_app(db):
+def make_app():
     return tornado.web.Application([
         url(r"/", MainHandler),
         url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
@@ -27,8 +20,7 @@ def make_app(db):
 
 
 if __name__ == '__main__':
-    db = create_db()
-    app = make_app(db)
+    app = make_app()
     app.listen(options.port)
     tornado.ioloop.IOLoop.current().start()
 
