@@ -5,11 +5,13 @@ from pymongo import MongoClient
 import os
 from handlers.main import MainHandler
 from handlers.list import ListHandler
+from settings import settings
+from tornado.options import options
 
 
 def create_db():
-    client = MongoClient("localhost",27017)
-    db = client['coloredlistdb']
+    client = MongoClient(options.dbhost, options.dbport)
+    db = client[options.dbname]
     return db
     
 
@@ -21,15 +23,13 @@ def make_app(db):
         url(r"/list/create", ListHandler, dict(db=db)),
         url(r"/list", ListHandler, dict(db=db)),
     ],
-    debug=True,
-    static_path=os.path.join(os.path.dirname(__file__), "static"),
-    template_path=os.path.join(os.path.dirname(__file__), "templates"))
+    **settings)
 
 
 if __name__ == '__main__':
     db = create_db()
     app = make_app(db)
-    app.listen(9080)
+    app.listen(options.port)
     tornado.ioloop.IOLoop.current().start()
 
 

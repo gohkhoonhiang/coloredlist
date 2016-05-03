@@ -29,6 +29,7 @@
   * [Static Content](#static-content)
   * [Template Inheritance](#template-inheritance)
   * [Handlers Module](#handlers-module)
+  * [App Settings](#app-settings)
 
 
 # Introduction
@@ -1008,5 +1009,75 @@ from handlers.list import ListHandler
 ```
 
 We don't need to change anything about the URLSpec definitions in creating the `tornado.web.Application` object.
+
+[Back to top](#table-of-contents)
+
+## App Settings
+
+Our app is starting to look more structured than when we first started building it. We want to take a step further and make it more easily configurable by extracting all settings into a separate file called `settings.py`, which we will craete under the same directory as `app.py`.
+
+```
+import os
+from tornado.options import define, options
+
+
+# Define file paths
+ROOT = os.path.join(os.path.dirname(__file__))
+STATIC_ROOT = os.path.join(ROOT, "static")
+TEMPLATE_ROOT = os.path.join(ROOT, "templates")
+
+
+# Define global options
+define("port", default=9080, help="server port", type=int)
+define("debug", default=True, help="debug mode")
+define("dbhost", default="localhost", help="db host")
+define("dbport", default=27017, help="db port", type=int)
+define("dbname", default="coloredlistdb", help="name of db")
+
+
+# Define application settings
+settings = {}
+settings["debug"] = options.debug
+settings["static_path"] = STATIC_ROOT
+settings["template_path"] = TEMPLATE_ROOT
+```
+
+In the newly created `settings.py` file, we will define the `STATIC_ROOT` and `TEMPLATE_ROOT` variables to be used in the application settings for `static_path` and `template_path` respectively.
+
+We also make use of `tornado.options.options`, which is a global options object, to store certain options like `port` and `dbhost` etc by calling the `define` function.
+
+Since we have extracted all the settings and options into a separate file, we need to tell our application how to load these settings and options. In our `app.py` file, we will need to import the `settings` object and `tornado.options.options` object:
+
+```
+from settings import settings
+from tornado.options import options
+```
+
+Then we can make use of the settings and options like this:
+
+```
+def create_db():
+    client = MongoClient(options.dbhost, options.dbport)
+    db = client[options.dbname]
+    return db
+
+def make_app(db):
+    return tornado.web.Application([
+        url(r"/", MainHandler),
+        url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
+        url(r"/list/([0-9a-zA-Z\-]+)/delete", ListHandler, dict(db=db)),
+        url(r"/list/create", ListHandler, dict(db=db)),
+        url(r"/list", ListHandler, dict(db=db)),
+    ],
+    **settings)
+
+if __name__ == '__main__':
+    db = create_db()
+    app = make_app(db)
+    app.listen(options.port)
+    tornado.ioloop.IOLoop.current().start()
+```
+
+By separating the settings and options from our application, we can make changes to the settings and options without having to change the `app.py` directly. It gives us the flexibility to deploy the application on different servers and using different databases by just dealing with `settings.py` file.
 
 [Back to top](#table-of-contents)
