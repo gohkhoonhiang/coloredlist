@@ -82,6 +82,7 @@
 <li><a href="#handlers-module">Handlers Module</a></li>
 <li><a href="#app-settings">App Settings</a></li>
 <li><a href="#db-settings">DB Settings</a></li>
+<li><a href="#url-patterns">URL Patterns</a></li>
 </ul>
 </li>
 </ul>
@@ -1166,6 +1167,49 @@ db = create_db()
 </code></pre>
 
 <p>We are not yet ready to be database-independent, but we will come to creating a database wrapper in a while.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="url-patterns" class="anchor" href="#url-patterns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>URL Patterns</h2>
+
+<p>Honestly, I still haven't figured out why it is best practice to put URLs into a separate file. I guess it is probably for maintainability reasons. Personally I would also prefer defining the URLs separately from the main application, so that the <code>app.py</code> file will look clean and lean.</p>
+
+<p>We will create a new <code>urls.py</code> file under the same directory as <code>app.py</code>. It will just contain our URLSpecs as follows:</p>
+
+<pre><code>from tornado.web import url
+from handlers.main import MainHandler
+from handlers.list import ListHandler
+from db import db
+
+
+url_patterns = [
+    url(r"/", MainHandler),
+    url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
+    url(r"/list/([0-9a-zA-Z\-]+)/delete", ListHandler, dict(db=db)),
+    url(r"/list/create", ListHandler, dict(db=db)),
+    url(r"/list", ListHandler, dict(db=db)),
+]
+</code></pre>
+
+<p>Since we have extracted the URLs from <code>app.py</code>, we no longer need to import <code>db</code> and <code>handlers</code> in <code>app.py</code>, and the file should look like this now:</p>
+
+<pre><code>import tornado.ioloop
+import tornado.web
+from settings import settings
+from tornado.options import options
+from urls import url_patterns
+
+
+def make_app():
+    return tornado.web.Application(url_patterns, **settings)
+
+
+if __name__ == '__main__':
+    app = make_app()
+    app.listen(options.port)
+    tornado.ioloop.IOLoop.current().start()
+</code></pre>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
