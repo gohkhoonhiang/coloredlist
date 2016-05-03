@@ -2,7 +2,6 @@ import tornado.ioloop
 import tornado.web
 from tornado.web import url
 from pymongo import MongoClient
-from bson.objectid import ObjectId
 import os
 from handlers.main import MainHandler
 from handlers.list import ListHandler
