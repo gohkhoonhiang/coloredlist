@@ -83,6 +83,7 @@
 <li><a href="#app-settings">App Settings</a></li>
 <li><a href="#db-settings">DB Settings</a></li>
 <li><a href="#url-patterns">URL Patterns</a></li>
+<li><a href="#final-structure">Final Structure</a></li>
 </ul>
 </li>
 </ul>
@@ -1210,6 +1211,35 @@ if __name__ == '__main__':
     app.listen(options.port)
     tornado.ioloop.IOLoop.current().start()
 </code></pre>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="final-structure" class="anchor" href="#final-structure" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Final Structure</h2>
+
+<p>At the end of all the restructuring, we should have achieved our desired structure for the application:</p>
+
+<pre><code>+-- coloredlist/
+|   +-- app.py
+|   +-- db.py
+|   +-- settings.py
+|   +-- urls.py
+|   +-- handlers/
+|   |   +-- __init__.py
+|   |   +-- list.py
+|   |   +-- main.py
+|   +-- static/
+|   |   +-- css/
+|   |   +-- img/
+|   |   +-- js/
+|   |   |   +-- list.js
+|   +-- templates/
+|   |   +-- base.html
+|   |   +-- list.html
+|   |   +-- main.html
+</code></pre>
+
+<p>This may not be the best structure for a Tornado app, but we will improve on it as we add in more advanced features.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
