@@ -81,6 +81,7 @@
 <li><a href="#template-inheritance">Template Inheritance</a></li>
 <li><a href="#handlers-module">Handlers Module</a></li>
 <li><a href="#app-settings">App Settings</a></li>
+<li><a href="#db-settings">DB Settings</a></li>
 </ul>
 </li>
 </ul>
@@ -1131,6 +1132,40 @@ if __name__ == '__main__':
 </code></pre>
 
 <p>By separating the settings and options from our application, we can make changes to the settings and options without having to change the <code>app.py</code> directly. It gives us the flexibility to deploy the application on different servers and using different databases by just dealing with <code>settings.py</code> file.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="db-settings" class="anchor" href="#db-settings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>DB Settings</h2>
+
+<p>Since I've mentioned about using different databases for our app, we might as well make our app database-independent, meaning we shouldn't be tied to using only MongoDB, but have the option to use MySQL or PostgreSQL or whichever database deemed appropriate. For this, we have to restructure how we define our <code>db</code> object. Instead of creating the <code>db</code> object inside <code>app.py</code>, we will create a separate <code>db.py</code> under the same directory as <code>app.py</code>, where we will create a <code>db</code> object for our application's use.</p>
+
+<pre><code>from pymongo import MongoClient
+from tornado.options import options
+
+
+def create_db():
+    client = MongoClient(options.dbhost, options.dbport)
+    db = client[options.dbname]
+    return db
+
+db = create_db()
+</code></pre>
+
+<p>Then, we will remove the <code>create_db</code> function from <code>app.py</code>, and instead do a import of the <code>db</code> object:</p>
+
+<pre><code>from db import db
+</code></pre>
+
+<p>We can also remove the call to <code>create_db</code> in our main code:</p>
+
+<pre><code>if __name__ == '__main__':
+    app = make_app()
+    app.listen(options.port)
+    tornado.ioloop.IOLoop.current().start()
+</code></pre>
+
+<p>We are not yet ready to be database-independent, but we will come to creating a database wrapper in a while.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
