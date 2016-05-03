@@ -28,6 +28,7 @@
 * [Structuring the App](#structuring-the-app)
   * [Static Content](#static-content)
   * [Template Inheritance](#template-inheritance)
+  * [Handlers Module](#handlers-module)
 
 
 # Introduction
@@ -951,5 +952,61 @@ For `main.html`, since we have just basically migrated the entire markup into `b
 ```
 
 The advantage of template inheritance is that we don't need to copy-paste the header and footer everytime we create a new page with the same look-and-feel.
+
+[Back to top](#table-of-contents)
+
+## Handlers Module
+
+The next thing we want to tackle here is `app.py`. Notice that it has grown in size pretty quickly even though have just started with 2 handlers. We want to make it easily maintainable, so we should start separating different handlers into their rightful places.
+
+First, we need to create a new directory `handlers` in the same directory as `app.py`. Then we create `__init__.py` in `handlers` to indicate that it should be a `import`-able module.
+
+We will migrate `class MainHandler` and `class ListHandler` into separate files, `main.py` and `list.py` respectively inside `handlers` directory.
+
+What we have will be like this:
+
+### `main.py`
+
+```
+import tornado.web
+
+
+class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("main.html")
+```
+
+### `list.py`
+
+```
+import tornado.web
+from bson.objectid import ObjectId
+
+
+class ListHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def get(self):
+        # ommitted for simplicity
+
+    def post(self):
+        # ommitted for simplicity
+
+    def put(self, item_id):
+        # ommitted for simplicity
+
+    def delete(self, item_id):
+        # ommitted for simplicity
+```
+
+Since we have extracted these 2 classes out of `app.py`, we need to tell the main application where to get the 2 handlers. For that, we need to import the 2 handlers from the newly created `handlers` module like this:
+
+```
+from handlers.main import MainHandler
+from handlers.list import ListHandler
+```
+
+We don't need to change anything about the URLSpec definitions in creating the `tornado.web.Application` object.
 
 [Back to top](#table-of-contents)
