@@ -31,6 +31,7 @@
   * [Handlers Module](#handlers-module)
   * [App Settings](#app-settings)
   * [DB Settings](#db-settings)
+  * [URL Patterns](#url-patterns)
 
 
 # Introduction
@@ -1118,3 +1119,48 @@ if __name__ == '__main__':
 We are not yet ready to be database-independent, but we will come to creating a database wrapper in a while.
 
 [Back to top](#table-of-contents)
+
+## URL Patterns
+
+Honestly, I still haven't figured out why it is best practice to put URLs into a separate file. I guess it is probably for maintainability reasons. Personally I would also prefer defining the URLs separately from the main application, so that the `app.py` file will look clean and lean.
+
+We will create a new `urls.py` file under the same directory as `app.py`. It will just contain our URLSpecs as follows:
+
+```
+from tornado.web import url
+from handlers.main import MainHandler
+from handlers.list import ListHandler
+from db import db
+
+
+url_patterns = [
+    url(r"/", MainHandler),
+    url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
+    url(r"/list/([0-9a-zA-Z\-]+)/delete", ListHandler, dict(db=db)),
+    url(r"/list/create", ListHandler, dict(db=db)),
+    url(r"/list", ListHandler, dict(db=db)),
+]
+```
+
+Since we have extracted the URLs from `app.py`, we no longer need to import `db` and `handlers` in `app.py`, and the file should look like this now:
+
+```
+import tornado.ioloop
+import tornado.web
+from settings import settings
+from tornado.options import options
+from urls import url_patterns
+
+
+def make_app():
+    return tornado.web.Application(url_patterns, **settings)
+
+
+if __name__ == '__main__':
+    app = make_app()
+    app.listen(options.port)
+    tornado.ioloop.IOLoop.current().start()
+```
+
+[Back to top](#table-of-contents)
+
