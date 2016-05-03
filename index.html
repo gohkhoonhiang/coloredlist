@@ -86,6 +86,13 @@
 <li><a href="#final-structure">Final Structure</a></li>
 </ul>
 </li>
+<li>
+<a href="#styling-the-app">Styling the App</a>
+
+<ul>
+<li><a href="#basic-css">Basic CSS</a></li>
+</ul>
+</li>
 </ul>
 
 <h1>
@@ -1240,6 +1247,89 @@ if __name__ == '__main__':
 </code></pre>
 
 <p>This may not be the best structure for a Tornado app, but we will improve on it as we add in more advanced features.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h1>
+<a id="styling-the-app" class="anchor" href="#styling-the-app" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Styling the App</h1>
+
+<p>Since this is mainly a Tornado tutorial, I'm not going to focus much on styling the app. My purpose here is just to learn how to incorporate CSS files into my templates, so I'm going to take almost every CSS defined from the <a href="https://css-tricks.com/app-from-scratch-4-html-css/">sample</a> and tweak such that there is no loading errors.</p>
+
+<p>The end product is not going to look very nice, but that's really not our main concern here.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="basic-css" class="anchor" href="#basic-css" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Basic CSS</h2>
+
+<p>Remember we have created our <code>static/css</code> folder earlier? Now we can put it into some use. Inside the directory, we will create 3 files, <code>main.css</code>, <code>list.css</code> and <code>sidebar.css</code>.</p>
+
+<h3>
+<a id="maincss" class="anchor" href="#maincss" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>main.css</code>
+</h3>
+
+<p>Due to the file being quite loaded, I'm going to just extract a few lines here. For the complete CSS file, please refer to the source code.</p>
+
+<pre><code>* { margin: 0; padding: 0; }
+body { font: 14px/1.1 Helvetica, Sans-Serif; }
+.clear { clear: both; }
+img, a img { border: none; }
+input { outline: none; }
+</code></pre>
+
+<h3>
+<a id="listcss" class="anchor" href="#listcss" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>list.css</code>
+</h3>
+
+<pre><code>#list { list-style: none; }
+#list li { position: relative; margin: 0 0 8px 0; padding: 0 0 0 70px; width: 607px; }
+#list li span { padding: 2px; -moz-border-radius: 5px; -webkit-border-radius: 5px; width: 589px; display: block; position: relative; }
+</code></pre>
+
+<h3>
+<a id="sidebarcss" class="anchor" href="#sidebarcss" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>sidebar.css</code>
+</h3>
+
+<pre><code>#ribbon { position: absolute; right: 0; width: 125px; padding: 60px 30px 0 47px; height: 756px; top: -6px; }
+
+#ribbon ul { list-style: none; }
+#ribbon ul li { background: rgba(0,0,0,0.8); color: white; padding: 5px; margin: 0 0 5px 0; font-size: 12px; }
+</code></pre>
+
+<p>Then, we need to import the CSS files within the HTML templates like this:</p>
+
+<h3>
+<a id="basehtml" class="anchor" href="#basehtml" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>base.html</code>
+</h3>
+
+<pre><code>&lt;head&gt;
+    &lt;title&gt;Colored List App&lt;/title&gt;
+    &lt;link rel="stylesheet" href="{{ static_url('css/main.css') }}"&gt;
+    &lt;link rel="stylesheet" href="{{ static_url('css/sidebar.css') }}"&gt;
+&lt;/head&gt;
+</code></pre>
+
+<h3>
+<a id="listhtml-1" class="anchor" href="#listhtml-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>list.html</code>
+</h3>
+
+<pre><code>{% block content %}
+&lt;link rel="stylesheet" href="{{ static_url('css/list.css') }}"&gt;
+&lt;ul id="list"&gt;
+...
+&lt;/ul&gt;
+&lt;form id="add-new" action="/list/create" method="post"&gt;
+    &lt;div&gt;
+        &lt;input type="text" id="new-list-item-text" name="text"&gt;
+        &lt;input type="submit" id="new-item-submit" value="Add" class="button"&gt;
+    &lt;/div&gt;
+&lt;/form&gt;
+{% end %}
+</code></pre>
+
+<p>Note that for <code>list.html</code>, we have added an <code>id</code> attribute for the list <code>ul</code> element and <code>form</code> element. This is so that we can style them using our newly created stylesheets.</p>
+
+<p>Now our app should have basic styling, although it most likely isn't very pleasant.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
