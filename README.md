@@ -32,6 +32,7 @@
   * [App Settings](#app-settings)
   * [DB Settings](#db-settings)
   * [URL Patterns](#url-patterns)
+  * [Final Structure](#final-structure)
 
 
 # Introduction
@@ -1164,3 +1165,31 @@ if __name__ == '__main__':
 
 [Back to top](#table-of-contents)
 
+## Final Structure
+
+At the end of all the restructuring, we should have achieved our desired structure for the application:
+
+```
++-- coloredlist/
+|   +-- app.py
+|   +-- db.py
+|   +-- settings.py
+|   +-- urls.py
+|   +-- handlers/
+|   |   +-- __init__.py
+|   |   +-- list.py
+|   |   +-- main.py
+|   +-- static/
+|   |   +-- css/
+|   |   +-- img/
+|   |   +-- js/
+|   |   |   +-- list.js
+|   +-- templates/
+|   |   +-- base.html
+|   |   +-- list.html
+|   |   +-- main.html
+```
+
+This may not be the best structure for a Tornado app, but we will improve on it as we add in more advanced features.
+
+[Back to top](#table-of-contents)
