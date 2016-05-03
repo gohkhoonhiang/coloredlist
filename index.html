@@ -910,9 +910,22 @@ def delete(self, item_id):
 
 <p>Previously we made a note about template inheritance when we were making the list page. Now we have finally come to this part where we are going to make some base templates that can be extended by various pages.</p>
 
-<p>First of all, we need to create a new directory <code>templates</code> in the same directory as <code>app.py</code>. Then we create a new file called <code>base.html</code>.</p>
+<p>First of all, we need to create a new directory <code>templates</code> in the same directory as <code>app.py</code>. Then we need to inform our application to load templates from the <code>templates</code> directory through the <code>template_path</code> setting:</p>
 
-<p>Basically what this file will contain is the entire HTML markup of <code>main.html</code> with some additions.</p>
+<pre><code>def make_app(db):
+    return tornado.web.Application([
+        url(r"/", MainHandler),
+        url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
+        url(r"/list/([0-9a-zA-Z\-]+)/delete", ListHandler, dict(db=db)),
+        url(r"/list/create", ListHandler, dict(db=db)),
+        url(r"/list", ListHandler, dict(db=db)),
+    ],
+    debug=True,
+    static_path=os.path.join(os.path.dirname(__file__), "static"),
+    template_path=os.path.join(os.path.dirname(__file__), "templates"))
+</code></pre>
+
+<p>We now create a new file called <code>base.html</code>. Basically what this file will contain is the entire HTML markup of <code>main.html</code> with some additions, and it will be the base of all our pages.</p>
 
 <pre><code>&lt;!DOCTYPE html&gt;    
 &lt;html&gt;
@@ -952,9 +965,11 @@ def delete(self, item_id):
 
 <p>This allow us to extend the <code>base.html</code> template and put various page contents within this <code>div</code>.</p>
 
-<p>For example, now we can extend <code>base.html</code> in <code>list.html</code> like this:</p>
+<p>We also need to move our <code>main.html</code> and <code>list.html</code> into the newly created <code>templates</code> directory.</p>
 
-<pre><code>{% extends "templates/base.html" %}
+<p>Now we can extend <code>base.html</code> in <code>list.html</code> like this:</p>
+
+<pre><code>{% extends "base.html" %}
 {% block content %}
 &lt;ul&gt;
 {% for item in items %}
@@ -976,11 +991,16 @@ def delete(self, item_id):
 {% end %}
 </code></pre>
 
-<p>First, we need to indicate that we are extending from <code>base.html</code> by the expression <code>{% extends "templates/base.html" %}</code>.</p>
+<p>First, we need to indicate that we are extending from <code>base.html</code> by the expression <code>{% extends "base.html" %}</code>.</p>
 
 <p>Then we indicate that we will extend the <code>{% block content %}</code> block by including our original <code>list.html</code> markup under <code>{% block content %}{% end %}</code> block.</p>
 
 <p>When we load our <code>/list</code> page, we will have all the markup from <code>base.html</code> including <code>&lt;div class="header"&gt;</code> and <code>&lt;div class="ribbon"&gt;</code>, followed by the <code>{% block content %}</code> block, which will include <code>&lt;ul&gt;</code> and <code>&lt;form&gt;</code>.</p>
+
+<p>For <code>main.html</code>, since we have just basically migrated the entire markup into <code>base.html</code>, we can just extend <code>base.html</code> directly inside <code>main.html</code> like this:</p>
+
+<pre><code>{% extends "base.html" %}
+</code></pre>
 
 <p>The advantage of template inheritance is that we don't need to copy-paste the header and footer everytime we create a new page with the same look-and-feel.</p>
 
