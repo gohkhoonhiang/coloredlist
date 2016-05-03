@@ -69,7 +69,8 @@ def make_app(db):
         url(r"/list", ListHandler, dict(db=db)),
     ],
     debug=True,
-    static_path=os.path.join(os.path.dirname(__file__), "static"))
+    static_path=os.path.join(os.path.dirname(__file__), "static"),
+    template_path=os.path.join(os.path.dirname(__file__), "templates"))
 
 
 if __name__ == '__main__':

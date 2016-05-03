@@ -853,9 +853,23 @@ def make_app(db):
 
 Previously we made a note about template inheritance when we were making the list page. Now we have finally come to this part where we are going to make some base templates that can be extended by various pages.
 
-First of all, we need to create a new directory `templates` in the same directory as `app.py`. Then we create a new file called `base.html`.
+First of all, we need to create a new directory `templates` in the same directory as `app.py`. Then we need to inform our application to load templates from the `templates` directory through the `template_path` setting:
 
-Basically what this file will contain is the entire HTML markup of `main.html` with some additions.
+```
+def make_app(db):
+    return tornado.web.Application([
+        url(r"/", MainHandler),
+        url(r"/list/([0-9a-zA-Z\-]+)/edit", ListHandler, dict(db=db)),
+        url(r"/list/([0-9a-zA-Z\-]+)/delete", ListHandler, dict(db=db)),
+        url(r"/list/create", ListHandler, dict(db=db)),
+        url(r"/list", ListHandler, dict(db=db)),
+    ],
+    debug=True,
+    static_path=os.path.join(os.path.dirname(__file__), "static"),
+    template_path=os.path.join(os.path.dirname(__file__), "templates"))
+```
+
+We now create a new file called `base.html`. Basically what this file will contain is the entire HTML markup of `main.html` with some additions, and it will be the base of all our pages.
 
 ```
 <!DOCTYPE html>    
@@ -897,10 +911,12 @@ Under `<div id="main">`, we add the Python expressions:
 
 This allow us to extend the `base.html` template and put various page contents within this `div`.
 
-For example, now we can extend `base.html` in `list.html` like this:
+We also need to move our `main.html` and `list.html` into the newly created `templates` directory.
+
+Now we can extend `base.html` in `list.html` like this:
 
 ```
-{% extends "templates/base.html" %}
+{% extends "base.html" %}
 {% block content %}
 <ul>
 {% for item in items %}
@@ -922,11 +938,17 @@ For example, now we can extend `base.html` in `list.html` like this:
 {% end %}
 ```
 
-First, we need to indicate that we are extending from `base.html` by the expression `{% extends "templates/base.html" %}`.
+First, we need to indicate that we are extending from `base.html` by the expression `{% extends "base.html" %}`.
 
 Then we indicate that we will extend the `{% block content %}` block by including our original `list.html` markup under `{% block content %}{% end %}` block.
 
 When we load our `/list` page, we will have all the markup from `base.html` including `<div class="header">` and `<div class="ribbon">`, followed by the `{% block content %}` block, which will include `<ul>` and `<form>`.
+
+For `main.html`, since we have just basically migrated the entire markup into `base.html`, we can just extend `base.html` directly inside `main.html` like this:
+
+```
+{% extends "base.html" %}
+```
 
 The advantage of template inheritance is that we don't need to copy-paste the header and footer everytime we create a new page with the same look-and-feel.
 
