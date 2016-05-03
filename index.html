@@ -79,6 +79,7 @@
 <ul>
 <li><a href="#static-content">Static Content</a></li>
 <li><a href="#template-inheritance">Template Inheritance</a></li>
+<li><a href="#handlers-module">Handlers Module</a></li>
 </ul>
 </li>
 </ul>
@@ -1003,6 +1004,64 @@ def delete(self, item_id):
 </code></pre>
 
 <p>The advantage of template inheritance is that we don't need to copy-paste the header and footer everytime we create a new page with the same look-and-feel.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="handlers-module" class="anchor" href="#handlers-module" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Handlers Module</h2>
+
+<p>The next thing we want to tackle here is <code>app.py</code>. Notice that it has grown in size pretty quickly even though have just started with 2 handlers. We want to make it easily maintainable, so we should start separating different handlers into their rightful places.</p>
+
+<p>First, we need to create a new directory <code>handlers</code> in the same directory as <code>app.py</code>. Then we create <code>__init__.py</code> in <code>handlers</code> to indicate that it should be a <code>import</code>-able module.</p>
+
+<p>We will migrate <code>class MainHandler</code> and <code>class ListHandler</code> into separate files, <code>main.py</code> and <code>list.py</code> respectively inside <code>handlers</code> directory.</p>
+
+<p>What we have will be like this:</p>
+
+<h3>
+<a id="mainpy" class="anchor" href="#mainpy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>main.py</code>
+</h3>
+
+<pre><code>import tornado.web
+
+
+class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("main.html")
+</code></pre>
+
+<h3>
+<a id="listpy" class="anchor" href="#listpy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>list.py</code>
+</h3>
+
+<pre><code>import tornado.web
+from bson.objectid import ObjectId
+
+
+class ListHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def get(self):
+        # ommitted for simplicity
+
+    def post(self):
+        # ommitted for simplicity
+
+    def put(self, item_id):
+        # ommitted for simplicity
+
+    def delete(self, item_id):
+        # ommitted for simplicity
+</code></pre>
+
+<p>Since we have extracted these 2 classes out of <code>app.py</code>, we need to tell the main application where to get the 2 handlers. For that, we need to import the 2 handlers from the newly created <code>handlers</code> module like this:</p>
+
+<pre><code>from handlers.main import MainHandler
+from handlers.list import ListHandler
+</code></pre>
+
+<p>We don't need to change anything about the URLSpec definitions in creating the <code>tornado.web.Application</code> object.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
