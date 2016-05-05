@@ -35,6 +35,12 @@
   * [Final Structure](#final-structure)
 * [Styling the App](#styling-the-app)
   * [Basic CSS](#basic-css)
+* [User Authentication](#user-authentication)
+  * [Login Form](#login-form)
+  * [Login and Logout Handlers](#login-and-logout-handlers)
+  * [Authentication URL Patterns](#authentication-url-patterns)
+  * [Authentication AJAX](#authentication-ajax)
+  * [Secret Cookie](#secret-cookie)
 
 
 # Introduction
@@ -1271,3 +1277,215 @@ Note that for `list.html`, we have added an `id` attribute for the list `ul` ele
 Now our app should have basic styling, although it most likely isn't very pleasant.
 
 [Back to top](#table-of-contents)
+
+# User Authentication
+
+Notice that all this while we have been freely accessing our list without having to login at all. In this age where security is a concern, no one would use our app if it does not have any form of authentication. Now, we will start building in user authentication feature for our app.
+
+[Back to top](#table-of-contents)
+
+## Login Form
+
+First of all, we will define our login form. It will be a simple form, with username and password fields.
+
+```
+{% extends "base.html" %}
+{% block content %}
+<form action="/login/submit" method="post">
+    <div>
+        <input type="text" name="username" id="username">
+        <label for="username">Username</label>
+        <input type="password" name="password" id="password">
+        <label for="password">Password</label>
+    </div>
+    <input type="submit" id="login-submit" value="Login" class="button">
+</form>
+{% end %}
+```
+
+We will extend our `base.html` template and define the login form within `{% block content %}`.
+
+There is nothing special about this form. We specify the action `/login/submit`, and will send the request as a `POST` request.
+
+[Back to top](#table-of-contents)
+
+## Login and Logout Handlers
+
+We need to create handlers for our login form. We will create a new file `auth.py` under `handlers` directory, and create `class LoginHandler` inside the handler.
+
+We will have a `get` function to handle `GET` request and `post` function to handle `POST` request. The `get` function will simply return our `login.html` form. When the login form sends a `POST` request, the `post` function will take the `username` from the request argument by calling `self.get_argument("username")`. We will set this username in our session cookie with `user` key, then redirect to the `/list` URL to display the list view.
+
+For the time being, we will omit password authentication as this will require searching through the persistent datastore.
+
+```
+import tornado.web
+import json
+
+
+class LoginHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        self.set_secure_cookie("user", self.get_argument("username"))
+        self.redirect("/list")
+```
+
+For every authentication feature, there will be a logout function as well. We will then define another `class LogoutHandler` under `auth.py`.
+
+```
+class LogoutHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def post(self):
+        response = {}
+        if self.get_secure_cookie("user"):
+            self.set_secure_cookie("user", "")
+            response["status"] = 200
+            response["redirectUrl"] = "/login"
+            self.write(json.dumps(response))
+        else:
+            response["status"] = 400
+            response["errorMsg"] = "User not in session"
+            response["redirectUrl"] = "/login"
+            self.write(json.dumps(response))
+```
+
+Basically, we will remove the user from our session cookie by setting the `user` key value to empty. Then we will create a response dictionary with `status=200` and `redirectUrl=/login`. However, if with any reason the user is no longer in session, we will return `status=400` with `errorMsg=User not in session` and `redirectUrl=/login`.
+
+Since we now have an authentication feature, we must not forget to make sure our list page is *protected* against unauthenticated access. To do that, we have to modify our `MainHandler`'s `get` function as such:
+
+```
+class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        if not self.get_secure_cookie("user"):
+            self.redirect("/login")
+            return
+        self.redirect("/list")
+```
+
+What this does is that it will first check whether there is any user in the session cookie, and redirect to `/login` if there is no user, or to `/list` if user is still in session. Of course this is not very secure, we should check whether the request comes from the same user in session, but we will leave that to a later stage.
+
+This is all very messy code and we shall come back later to refactor it. By then, we will need to introduce the concept of a `BaseHandler`. Let's come to that at a later stage.
+
+[Back to top](#table-of-contents)
+
+## Authentication URL Patterns
+
+Once we have created our `LoginHandler` and `LogoutHandler`, we can map the handlers to the respect URLs.
+
+Inside our `urls.py` file, we will add a new `import` statement:
+
+```
+from handlers.auth import LoginHandler, LogoutHandler
+```
+
+Then, we will add the mapping as such:
+
+```
+url(r"/login", LoginHandler, dict(db=db)),
+url(r"/login/submit", LoginHandler, dict(db=db)),
+url(r"/logout", LogoutHandler, dict(db=db)),
+```
+
+This is very straightforward by now. We will let `LoginHandler` handle `/login` and `/login/submit` URLs and `LogoutHandler` handle `/logout` URL.
+
+[Back to top](#table-of-contents)
+
+## Authentication AJAX
+
+Remember we created a `Logout` button very early in our app development? We shall now put it into use.
+
+In our `base.html`, we need to make a little change to our `Logout` button. Instead of calling `/logout` directly in the `a href` attribute, we need to use AJAX for the call, because `a href` only sends `GET` request.
+
+```
+<p><a href="#" id="logout-btn" class="button">Log Out</a>&nbsp;<a href="/account" class="button">Your Account</a></p>
+```
+
+To perform AJAX call, we will include the jQuery library and our `main.js` scripts at the bottom of `base.html`, before the closing `body` tag.
+
+```
+<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+<script src="{{ static_url('js/main.js') }}"></script>
+```
+
+Then inside `static/js` directory, we will create a new file for `main.js` and write our AJAX call.
+
+```
+$(document).ready(function() {
+    $('#logout-btn').click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/logout",
+            success: function(response) {
+                if (response) {
+                    response = JSON.parse(response);
+                    if (response.status == 200) {
+                        alert(response.errorMsg || "Logged out successfully.");
+                    } else {
+                        alert(response.errorMsg || "Error logging out");
+                    }
+                    window.location.href = response.redirectUrl;
+                }
+            }
+        });
+    }); 
+});
+```
+
+We will attach a AJAX call to the `click` event of our `logout-btn`. This should send a `POST` request to the `/logout` URL.
+
+On success, we will check for the response, we will parse into a JSON object for processing.
+
+If the `response.status` is `200`, we will prompt the `response.errorMsg` or `Logged out successfully`. Otherwise, we will prompt the `response.errorMsg` or `Error logging out`.
+
+In both cases, we will redirect the browser to the `response.redirectUrl` given by the server.
+
+[Back to top](#table-of-contents)
+
+## Secret Cookie
+
+At the end of all this, there is one very important thing that we need to do for this authentication feature to work. We have to define a secret cookie key in our application, which is used to sign our cookies to prevent forgery.
+
+This part is a bit tricky. The secret cookie key is supposed to be set in our `settings.py` file, but our application is open source, and everyone can see the `settings.py` source code. This means everyone will see our secret cookie key, and can as easily forge a cookie.
+
+To solve this problem, we will have to define one configuration file to store the secret cookie key, and this file should never be made public and will only live in our server. Let's call the file `config.conf`. This file will store our secret cookie key in the form of `cookie_secret = 'some long string of characters'`.
+
+Then our `settings.py` file will be modified to include reading the `config.conf` file and setting the `cookie_secret`:
+
+```
+import tornado
+from tornado.options import define, options, parse_config_file 
+```
+
+First we will make additional imports for `parse_config_file`.
+
+```
+define("cookie_secret", default=None, help="secret cookie")
+define("config", default="config.conf", help="secret config")
+```
+
+Then we will define the `cookie_secret` and `config` options. We will not be setting the `cookie_secret` directly here, instead we will make use of `config.conf` to read the value.
+
+```
+if options.config:
+    if os.path.exists(options.config):
+        parse_config_file(options.config)
+```
+
+To read the `config.conf` file, we will call the `parse_config_file` function, passing in the file name, which is defined in `options.config`.
+
+```
+settings["cookie_secret"] = options.cookie_secret
+```
+
+Finally, once we have read the option from `config.conf`, we can set it to our `settings["cookie_secret"]`, which will be passed to the `Application` object during creation.
+
+Now, our application is ready for authentication.
+
+[Back to top](#table-of-contents)
+

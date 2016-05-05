@@ -1,5 +1,6 @@
 import os
-from tornado.options import define, options
+import tornado
+from tornado.options import define, options, parse_config_file 
 
 
 # Define file paths
@@ -14,6 +15,14 @@ define("debug", default=True, help="debug mode")
 define("dbhost", default="localhost", help="db host")
 define("dbport", default=27017, help="db port", type=int)
 define("dbname", default="coloredlistdb", help="name of db")
+define("cookie_secret", default=None, help="secret cookie")
+define("config", default="config.conf", help="secret config")
+
+
+# Read config file
+if options.config:
+    if os.path.exists(options.config):
+        parse_config_file(options.config)
 
 
 # Define application settings
@@ -21,5 +30,6 @@ settings = {}
 settings["debug"] = options.debug
 settings["static_path"] = STATIC_ROOT
 settings["template_path"] = TEMPLATE_ROOT
+settings["cookie_secret"] = options.cookie_secret
 
 
