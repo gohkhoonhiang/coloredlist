@@ -93,6 +93,17 @@
 <li><a href="#basic-css">Basic CSS</a></li>
 </ul>
 </li>
+<li>
+<a href="#user-authentication">User Authentication</a>
+
+<ul>
+<li><a href="#login-form">Login Form</a></li>
+<li><a href="#login-and-logout-handlers">Login and Logout Handlers</a></li>
+<li><a href="#authentication-url-patterns">Authentication URL Patterns</a></li>
+<li><a href="#authentication-ajax">Authentication AJAX</a></li>
+<li><a href="#secret-cookie">Secret Cookie</a></li>
+</ul>
+</li>
 </ul>
 
 <h1>
@@ -1330,6 +1341,210 @@ input { outline: none; }
 <p>Note that for <code>list.html</code>, we have added an <code>id</code> attribute for the list <code>ul</code> element and <code>form</code> element. This is so that we can style them using our newly created stylesheets.</p>
 
 <p>Now our app should have basic styling, although it most likely isn't very pleasant.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h1>
+<a id="user-authentication" class="anchor" href="#user-authentication" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>User Authentication</h1>
+
+<p>Notice that all this while we have been freely accessing our list without having to login at all. In this age where security is a concern, no one would use our app if it does not have any form of authentication. Now, we will start building in user authentication feature for our app.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="login-form" class="anchor" href="#login-form" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Login Form</h2>
+
+<p>First of all, we will define our login form. It will be a simple form, with username and password fields.</p>
+
+<pre><code>{% extends "base.html" %}
+{% block content %}
+&lt;form action="/login/submit" method="post"&gt;
+    &lt;div&gt;
+        &lt;input type="text" name="username" id="username"&gt;
+        &lt;label for="username"&gt;Username&lt;/label&gt;
+        &lt;input type="password" name="password" id="password"&gt;
+        &lt;label for="password"&gt;Password&lt;/label&gt;
+    &lt;/div&gt;
+    &lt;input type="submit" id="login-submit" value="Login" class="button"&gt;
+&lt;/form&gt;
+{% end %}
+</code></pre>
+
+<p>We will extend our <code>base.html</code> template and define the login form within <code>{% block content %}</code>.</p>
+
+<p>There is nothing special about this form. We specify the action <code>/login/submit</code>, and will send the request as a <code>POST</code> request.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="login-and-logout-handlers" class="anchor" href="#login-and-logout-handlers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Login and Logout Handlers</h2>
+
+<p>We need to create handlers for our login form. We will create a new file <code>auth.py</code> under <code>handlers</code> directory, and create <code>class LoginHandler</code> inside the handler.</p>
+
+<p>We will have a <code>get</code> function to handle <code>GET</code> request and <code>post</code> function to handle <code>POST</code> request. The <code>get</code> function will simply return our <code>login.html</code> form. When the login form sends a <code>POST</code> request, the <code>post</code> function will take the <code>username</code> from the request argument by calling <code>self.get_argument("username")</code>. We will set this username in our session cookie with <code>user</code> key, then redirect to the <code>/list</code> URL to display the list view.</p>
+
+<p>For the time being, we will omit password authentication as this will require searching through the persistent datastore.</p>
+
+<pre><code>import tornado.web
+import json
+
+
+class LoginHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        self.set_secure_cookie("user", self.get_argument("username"))
+        self.redirect("/list")
+</code></pre>
+
+<p>For every authentication feature, there will be a logout function as well. We will then define another <code>class LogoutHandler</code> under <code>auth.py</code>.</p>
+
+<pre><code>class LogoutHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def post(self):
+        response = {}
+        if self.get_secure_cookie("user"):
+            self.set_secure_cookie("user", "")
+            response["status"] = 200
+            response["redirectUrl"] = "/login"
+            self.write(json.dumps(response))
+        else:
+            response["status"] = 400
+            response["errorMsg"] = "User not in session"
+            response["redirectUrl"] = "/login"
+            self.write(json.dumps(response))
+</code></pre>
+
+<p>Basically, we will remove the user from our session cookie by setting the <code>user</code> key value to empty. Then we will create a response dictionary with <code>status=200</code> and <code>redirectUrl=/login</code>. However, if with any reason the user is no longer in session, we will return <code>status=400</code> with <code>errorMsg=User not in session</code> and <code>redirectUrl=/login</code>.</p>
+
+<p>Since we now have an authentication feature, we must not forget to make sure our list page is <em>protected</em> against unauthenticated access. To do that, we have to modify our <code>MainHandler</code>'s <code>get</code> function as such:</p>
+
+<pre><code>class MainHandler(tornado.web.RequestHandler):
+    def get(self):
+        if not self.get_secure_cookie("user"):
+            self.redirect("/login")
+            return
+        self.redirect("/list")
+</code></pre>
+
+<p>What this does is that it will first check whether there is any user in the session cookie, and redirect to <code>/login</code> if there is no user, or to <code>/list</code> if user is still in session. Of course this is not very secure, we should check whether the request comes from the same user in session, but we will leave that to a later stage.</p>
+
+<p>This is all very messy code and we shall come back later to refactor it. By then, we will need to introduce the concept of a <code>BaseHandler</code>. Let's come to that at a later stage.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="authentication-url-patterns" class="anchor" href="#authentication-url-patterns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authentication URL Patterns</h2>
+
+<p>Once we have created our <code>LoginHandler</code> and <code>LogoutHandler</code>, we can map the handlers to the respect URLs.</p>
+
+<p>Inside our <code>urls.py</code> file, we will add a new <code>import</code> statement:</p>
+
+<pre><code>from handlers.auth import LoginHandler, LogoutHandler
+</code></pre>
+
+<p>Then, we will add the mapping as such:</p>
+
+<pre><code>url(r"/login", LoginHandler, dict(db=db)),
+url(r"/login/submit", LoginHandler, dict(db=db)),
+url(r"/logout", LogoutHandler, dict(db=db)),
+</code></pre>
+
+<p>This is very straightforward by now. We will let <code>LoginHandler</code> handle <code>/login</code> and <code>/login/submit</code> URLs and <code>LogoutHandler</code> handle <code>/logout</code> URL.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="authentication-ajax" class="anchor" href="#authentication-ajax" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authentication AJAX</h2>
+
+<p>Remember we created a <code>Logout</code> button very early in our app development? We shall now put it into use.</p>
+
+<p>In our <code>base.html</code>, we need to make a little change to our <code>Logout</code> button. Instead of calling <code>/logout</code> directly in the <code>a href</code> attribute, we need to use AJAX for the call, because <code>a href</code> only sends <code>GET</code> request.</p>
+
+<pre><code>&lt;p&gt;&lt;a href="#" id="logout-btn" class="button"&gt;Log Out&lt;/a&gt;&amp;nbsp;&lt;a href="/account" class="button"&gt;Your Account&lt;/a&gt;&lt;/p&gt;
+</code></pre>
+
+<p>To perform AJAX call, we will include the jQuery library and our <code>main.js</code> scripts at the bottom of <code>base.html</code>, before the closing <code>body</code> tag.</p>
+
+<pre><code>&lt;script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="{{ static_url('js/main.js') }}"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>Then inside <code>static/js</code> directory, we will create a new file for <code>main.js</code> and write our AJAX call.</p>
+
+<pre><code>$(document).ready(function() {
+    $('#logout-btn').click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/logout",
+            success: function(response) {
+                if (response) {
+                    response = JSON.parse(response);
+                    if (response.status == 200) {
+                        alert(response.errorMsg || "Logged out successfully.");
+                    } else {
+                        alert(response.errorMsg || "Error logging out");
+                    }
+                    window.location.href = response.redirectUrl;
+                }
+            }
+        });
+    }); 
+});
+</code></pre>
+
+<p>We will attach a AJAX call to the <code>click</code> event of our <code>logout-btn</code>. This should send a <code>POST</code> request to the <code>/logout</code> URL.</p>
+
+<p>On success, we will check for the response, we will parse into a JSON object for processing.</p>
+
+<p>If the <code>response.status</code> is <code>200</code>, we will prompt the <code>response.errorMsg</code> or <code>Logged out successfully</code>. Otherwise, we will prompt the <code>response.errorMsg</code> or <code>Error logging out</code>.</p>
+
+<p>In both cases, we will redirect the browser to the <code>response.redirectUrl</code> given by the server.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="secret-cookie" class="anchor" href="#secret-cookie" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Secret Cookie</h2>
+
+<p>At the end of all this, there is one very important thing that we need to do for this authentication feature to work. We have to define a secret cookie key in our application, which is used to sign our cookies to prevent forgery.</p>
+
+<p>This part is a bit tricky. The secret cookie key is supposed to be set in our <code>settings.py</code> file, but our application is open source, and everyone can see the <code>settings.py</code> source code. This means everyone will see our secret cookie key, and can as easily forge a cookie.</p>
+
+<p>To solve this problem, we will have to define one configuration file to store the secret cookie key, and this file should never be made public and will only live in our server. Let's call the file <code>config.conf</code>. This file will store our secret cookie key in the form of <code>cookie_secret = 'some long string of characters'</code>.</p>
+
+<p>Then our <code>settings.py</code> file will be modified to include reading the <code>config.conf</code> file and setting the <code>cookie_secret</code>:</p>
+
+<pre><code>import tornado
+from tornado.options import define, options, parse_config_file 
+</code></pre>
+
+<p>First we will make additional imports for <code>parse_config_file</code>.</p>
+
+<pre><code>define("cookie_secret", default=None, help="secret cookie")
+define("config", default="config.conf", help="secret config")
+</code></pre>
+
+<p>Then we will define the <code>cookie_secret</code> and <code>config</code> options. We will not be setting the <code>cookie_secret</code> directly here, instead we will make use of <code>config.conf</code> to read the value.</p>
+
+<pre><code>if options.config:
+    if os.path.exists(options.config):
+        parse_config_file(options.config)
+</code></pre>
+
+<p>To read the <code>config.conf</code> file, we will call the <code>parse_config_file</code> function, passing in the file name, which is defined in <code>options.config</code>.</p>
+
+<pre><code>settings["cookie_secret"] = options.cookie_secret
+</code></pre>
+
+<p>Finally, once we have read the option from <code>config.conf</code>, we can set it to our <code>settings["cookie_secret"]</code>, which will be passed to the <code>Application</code> object during creation.</p>
+
+<p>Now, our application is ready for authentication.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
