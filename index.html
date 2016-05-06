@@ -104,6 +104,17 @@
 <li><a href="#secret-cookie">Secret Cookie</a></li>
 </ul>
 </li>
+<li>
+<a href="#user-accounts">User Accounts</a>
+
+<ul>
+<li><a href="#new-user-collection">New User Collection</a></li>
+<li><a href="#create-account-form">Create Account Form</a></li>
+<li><a href="#create-account-script">Create Account Script</a></li>
+<li><a href="#after-create-account">After Create Account</a></li>
+<li><a href="#create-account-handler-and-url-mapping">Create Account Handler and URL Mapping</a></li>
+</ul>
+</li>
 </ul>
 
 <h1>
@@ -1545,6 +1556,209 @@ define("config", default="config.conf", help="secret config")
 <p>Finally, once we have read the option from <code>config.conf</code>, we can set it to our <code>settings["cookie_secret"]</code>, which will be passed to the <code>Application</code> object during creation.</p>
 
 <p>Now, our application is ready for authentication.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h1>
+<a id="user-accounts" class="anchor" href="#user-accounts" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>User Accounts</h1>
+
+<p>Based on our user authentication feature earlier, it doesn't really authenticate anyone, as it just stores the username in session without checking against the database whether the password is matching. We shall now create the concept of user accounts, so that we will have a database of users to authenticate against for every login.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="new-user-collection" class="anchor" href="#new-user-collection" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>New User Collection</h2>
+
+<p>To store user accounts in our database, we need to create a new collection called <code>users</code>. Let's start up our MongoDB client to create the collection.</p>
+
+<pre><code>&gt; mongo
+MongoDB shell version: 3.2.6
+connecting to: test
+&gt; use coloredlistdb
+switched to db coloredlistdb
+&gt;
+</code></pre>
+
+<p>We will call up the MongoDB shell using the <code>mongo</code> command. Then we switch to our database by <code>use coloredlistdb</code>.</p>
+
+<pre><code>&gt; db.createCollection("users")
+{ "ok" : 1 }
+&gt;
+</code></pre>
+
+<p>We will create a new collection to store our user accounts by running <code>db.createCollection("users")</code>.</p>
+
+<p>Now we want create our first user account, let's make it the <code>admin</code> user. We are going to hash the password for this user, so we will need the help of the Python console. Let's call up <code>python</code>.</p>
+
+<pre><code>&gt; python
+Python 3.5.1+ (default, Mar 30 2016, 22:46:26)
+[GCC 5.3.1 20160330] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt; import hashlib, pymongo
+&gt;&gt;&gt; hashed_pass = hashlib.md5("admin".encode("utf-8")).hexdigest()
+&gt;&gt;&gt; hashed_pass
+'21232f297a57a5a743894a0e4a801fc3'
+&gt;&gt;&gt; client = pymongo.MongoClient("localhost", 27017)
+&gt;&gt;&gt; db = client.coloredlistdb
+&gt;&gt;&gt; users = db.users
+&gt;&gt;&gt; users.insert_one({"username": "admin", "password": hashed_pass, "is_active": True, "is_admin": True})
+&lt;pymongo.results.InsertOneResult object at 0x7fe0779c7dc8&gt;
+&gt;&gt;&gt;
+</code></pre>
+
+<p>In the Python console, we <code>import hashlib</code> which deals with hashing. Then we pass in our password <code>password</code> into the <code>hashlib.md5</code> function, but before that, we need to encode our <code>password</code> string with <code>encode("utf-8")</code>. Once the hash object is created, we call <code>hexdigest</code> to get the digest in hexadecimals digits. This is the string that we will use to store in the <code>users</code> collection.</p>
+
+<p>Since we are using the Python console to generate the hashed password, we might as well use it to insert the user into our database. We create a <code>MongoClient</code> and get the <code>users</code> collection from the <code>coloredlistdb</code>. Then we insert the <code>admin</code> user with the following details:</p>
+
+<pre><code>{"username": "admin", "password": hashed_pass, "is_active": True, "is_admin": True}
+</code></pre>
+
+<p>After this, if we query the database from the MongoDB shell, we should find the document created.</p>
+
+<pre><code>&gt; db.users.find()
+{ "_id" : ObjectId("572cbfceaeca133de672b178"), "is_admin" : true, "is_active" : true, "password" : "21232f297a57a5a743894a0e4a801fc3", "username" : "admin" }
+&gt;
+</code></pre>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="create-account-form" class="anchor" href="#create-account-form" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Create Account Form</h2>
+
+<p>We will now create a new account form so that potential users can sign up for an account and start using our app. We will create <code>account_create.html</code> under <code>templates</code> directory.</p>
+
+<pre><code>{% extends "base.html" %}
+{% block content %}
+&lt;h2&gt;create account&lt;/h2&gt;
+&lt;form action="/account/create/submit" method="post" id="account-create-form"&gt;
+    &lt;div&gt;
+        &lt;input type="text" name="username" id="username"&gt;
+        &lt;label for="username"&gt;username&lt;/label&gt;
+        &lt;input type="password" name="password" id="password"&gt;
+        &lt;label for="password"&gt;password&lt;/label&gt;
+        &lt;input type="password" name="confirm-password" id="confirm-password"&gt;
+        &lt;label for="confirm-password"&gt;confirm password&lt;/label&gt;
+        &lt;input type="submit" name="new-account-submit" id="new-account-submit" value="submit" class="button"&gt;
+    &lt;/div&gt;
+&lt;/form&gt;
+&lt;script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="{{ static_url('js/account.js') }}"&gt;&lt;/script&gt;
+{% end %}
+</code></pre>
+
+<p>As usual, we will <code>{% extends "base.html" %}</code> and write our new account form within <code>{% block content %}</code>. We will create 3 fields for our purpose: <code>username</code>, <code>password</code> and <code>confirm-password</code>. The purpose of the <code>confirm-password</code> field is just to make sure the user has typed in the correct password, which we will validate using Javascript from <code>js/account.js</code> that we include at the end. Our form will <code>post</code> to <code>/account/create/submit</code> if the validation is successful.</p>
+
+<p>We also change our <code>base.html</code> template to use the <code>/acccount/create</code> URL for <code>Sign Up</code>:</p>
+
+<pre><code>&lt;p&gt;&lt;a href="/account/create" class="button"&gt;Sign Up&lt;/a&gt;&amp;nbsp;&lt;a href="/login" class="button"&gt;Log In&lt;/a&gt;&lt;/p&gt;
+</code></pre>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="create-account-script" class="anchor" href="#create-account-script" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Create Account Script</h2>
+
+<p>Now we create the Javascript that will handle the create account form submission. Create a new file <code>account.js</code> under <code>static/js</code> directory.</p>
+
+<pre><code>$(document).ready(function() {
+    $('#new-account-submit').click(function(e) {
+        if ($('#password').val() === $('#confirm-password').val()) {
+            $('#account-create-form').submit();
+        } else {
+            e.preventDefault();
+            alert('Password and Confirm Password do not match!');
+        }
+    });
+});
+</code></pre>
+
+<p>For our Javascript, we will first take the <code>password</code> field value and match with <code>confirm-password</code> field value. If they match, we simply call <code>submit</code> function of the <code>account-create-form</code>.</p>
+
+<p>However, if they don't match, we need to specifically call <code>e.preventDefault</code> so that the form submission will not happen. Then, we need to alert the user with a prompt, so that he can change the 2 password fields and make sure they match. </p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="after-create-account" class="anchor" href="#after-create-account" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>After Create Account</h2>
+
+<p>We will also create the views that are displayed after successfully creating an account, or when the account is not created, perhaps due to duplicate username. Let's call them <code>account_success.html</code> and <code>account_error.html</code>.</p>
+
+<h3>
+<a id="account_successhtml" class="anchor" href="#account_successhtml" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>account_success.html</code>
+</h3>
+
+<pre><code>{% extends "base.html" %}
+{% block content %}
+&lt;p&gt;Your account has been created successfully. Please login at &lt;a href="/login"&gt;Login Page&lt;/a&gt; to start creating your list!&lt;/p&gt;
+{% end %}
+</code></pre>
+
+<p>There is nothing special in this page. We just <code>{% extends "base.html" %}</code> and then tell the user the account is created, and point to the Login Page.</p>
+
+<h3>
+<a id="account_errorhtml" class="anchor" href="#account_errorhtml" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>account_error.html</code>
+</h3>
+
+<pre><code>{% extends "base.html" %}
+{% block content %}
+&lt;p&gt;Error in creating your account. {% if reason %}{{ reason }}{% end %}&lt;/p&gt;
+&lt;p&gt;Please try again &lt;a href="/account/create"&gt;here&lt;/a&gt;&lt;/p&gt;
+{% end %}
+</code></pre>
+
+<p>For the error page, there's an additional Python expression that checks for <code>reason</code> and display if it exists. Then we point to the New Account page again.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="create-account-handler-and-url-mapping" class="anchor" href="#create-account-handler-and-url-mapping" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Create Account Handler and URL Mapping</h2>
+
+<p>We now create the handlers to handle the <code>get</code> and <code>post</code> requests of the account page, using a new file <code>account.py</code> under <code>handlers</code>.</p>
+
+<pre><code>import tornado.web
+import hashlib
+
+
+class AccountHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def get(self):
+        self.render("account_create.html")
+
+    def post(self):
+        username = self.get_body_argument("username")
+        password = self.get_body_argument("password")
+        if username and password:
+            users = self.db['users']
+            if users.find_one({'username': username}):
+                self.render("account_error.html", reason="User already exists")
+            else:
+                hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
+                users.insert_one({'username': username, 'password': hashed_pass, 'is_admin': False, 'is_active': True})
+                self.render("account_success.html")
+        else:
+            self.render("account_error.html", reason="Invalid username or password")
+</code></pre>
+
+<p>Let's break this down. For the <code>get</code> function, it is just to render the <code>account_create.html</code> template. For the <code>post</code> function, we will first get the arguments <code>username</code> and <code>password</code> by calling <code>self.get_body_argument</code>. This will return us the values entered into the create account form.</p>
+
+<p>We should always check that the <code>username</code> and <code>password</code> are not empty, then we will try to check whether the <code>username</code> already exists by calling <code>find_one</code> from our <code>users</code> collection. If it already exists, we will render the <code>account_error.html</code> template and pass in the <code>reason</code>. Otherwise,  we will hash the password using the <code>md5</code> algorithm from <code>hashlib</code> module. It is required by the hashing algorithm to encode our string, so we will call <code>encode("utf-8")</code> from the <code>password</code> string before passing it into the <code>md5</code> function. Finally, we get the hashed string by calling <code>hexdigest</code>, which will return us a string in hexadecimal digits. This hashed password together with the username will be inserted by calling <code>users.insert_one</code>. Note that we will set <code>is_admin</code> as <code>False</code> and <code>is_active</code> as <code>True</code> for the time being. Later when we add on an advanced feature to deal with locking user account, we can make use of the <code>is_active</code> attribute.</p>
+
+<p>Finally, if we check that both <code>username</code> and <code>password</code> are empty, we will render the <code>account_error.html</code> template and pass in the <code>reason</code>.:w</p>
+
+<p>The URLs mapping will be defined in <code>urls.py</code> as such:</p>
+
+<pre><code>from handlers.account import AccountHandler
+</code></pre>
+
+<p>First, we import the <code>AccountHandler</code> from <code>handlers.account</code>.</p>
+
+<pre><code>url(r"/account/create", AccountHandler, dict(db=db)),
+url(r"/account/create/submit", AccountHandler, dict(db=db)),
+</code></pre>
+
+<p>Then we map <code>/account/create</code> and <code>/account/create/submit</code> to the <code>AccountHandler</code>.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
