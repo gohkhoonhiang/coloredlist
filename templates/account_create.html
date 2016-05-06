@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>create account</h2>
+<form action="/account/create/submit" method="post" id="account-create-form">
+    <div>
+        <input type="text" name="username" id="username">
+        <label for="username">username</label>
+        <input type="password" name="password" id="password">
+        <label for="password">password</label>
+        <input type="password" name="confirm-password" id="confirm-password">
+        <label for="confirm-password">confirm password</label>
+        <input type="submit" name="new-account-submit" id="new-account-submit" value="submit" class="button">
+    </div>
+</form>
+<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+<script src="{{ static_url('js/account.js') }}"></script>
+{% end %}

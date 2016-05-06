@@ -41,6 +41,12 @@
   * [Authentication URL Patterns](#authentication-url-patterns)
   * [Authentication AJAX](#authentication-ajax)
   * [Secret Cookie](#secret-cookie)
+* [User Accounts](#user-accounts)
+  * [New User Collection](#new-user-collection)
+  * [Create Account Form](#create-account-form)
+  * [Create Account Script](#create-account-script)
+  * [After Create Account](#after-create-account)
+  * [Create Account Handler and URL Mapping](#create-account-handler-and-url-mapping)
 
 
 # Introduction
@@ -1486,6 +1492,210 @@ settings["cookie_secret"] = options.cookie_secret
 Finally, once we have read the option from `config.conf`, we can set it to our `settings["cookie_secret"]`, which will be passed to the `Application` object during creation.
 
 Now, our application is ready for authentication.
+
+[Back to top](#table-of-contents)
+
+# User Accounts
+
+Based on our user authentication feature earlier, it doesn't really authenticate anyone, as it just stores the username in session without checking against the database whether the password is matching. We shall now create the concept of user accounts, so that we will have a database of users to authenticate against for every login.
+
+[Back to top](#table-of-contents)
+
+## New User Collection
+
+To store user accounts in our database, we need to create a new collection called `users`. Let's start up our MongoDB client to create the collection.
+
+```
+> mongo
+MongoDB shell version: 3.2.6
+connecting to: test
+> use coloredlistdb
+switched to db coloredlistdb
+>
+```
+
+We will call up the MongoDB shell using the `mongo` command. Then we switch to our database by `use coloredlistdb`.
+
+```
+> db.createCollection("users")
+{ "ok" : 1 }
+>
+```
+
+We will create a new collection to store our user accounts by running `db.createCollection("users")`.
+
+Now we want create our first user account, let's make it the `admin` user. We are going to hash the password for this user, so we will need the help of the Python console. Let's call up `python`.
+
+```
+> python
+Python 3.5.1+ (default, Mar 30 2016, 22:46:26)
+[GCC 5.3.1 20160330] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import hashlib, pymongo
+>>> hashed_pass = hashlib.md5("admin".encode("utf-8")).hexdigest()
+>>> hashed_pass
+'21232f297a57a5a743894a0e4a801fc3'
+>>> client = pymongo.MongoClient("localhost", 27017)
+>>> db = client.coloredlistdb
+>>> users = db.users
+>>> users.insert_one({"username": "admin", "password": hashed_pass, "is_active": True, "is_admin": True})
+<pymongo.results.InsertOneResult object at 0x7fe0779c7dc8>
+>>>
+```
+
+In the Python console, we `import hashlib` which deals with hashing. Then we pass in our password `password` into the `hashlib.md5` function, but before that, we need to encode our `password` string with `encode("utf-8")`. Once the hash object is created, we call `hexdigest` to get the digest in hexadecimals digits. This is the string that we will use to store in the `users` collection.
+
+Since we are using the Python console to generate the hashed password, we might as well use it to insert the user into our database. We create a `MongoClient` and get the `users` collection from the `coloredlistdb`. Then we insert the `admin` user with the following details:
+
+```
+{"username": "admin", "password": hashed_pass, "is_active": True, "is_admin": True}
+```
+
+After this, if we query the database from the MongoDB shell, we should find the document created.
+
+```
+> db.users.find()
+{ "_id" : ObjectId("572cbfceaeca133de672b178"), "is_admin" : true, "is_active" : true, "password" : "21232f297a57a5a743894a0e4a801fc3", "username" : "admin" }
+>
+```
+
+[Back to top](#table-of-contents)
+
+## Create Account Form
+
+We will now create a new account form so that potential users can sign up for an account and start using our app. We will create `account_create.html` under `templates` directory.
+
+```
+{% extends "base.html" %}
+{% block content %}
+<h2>create account</h2>
+<form action="/account/create/submit" method="post" id="account-create-form">
+    <div>
+        <input type="text" name="username" id="username">
+        <label for="username">username</label>
+        <input type="password" name="password" id="password">
+        <label for="password">password</label>
+        <input type="password" name="confirm-password" id="confirm-password">
+        <label for="confirm-password">confirm password</label>
+        <input type="submit" name="new-account-submit" id="new-account-submit" value="submit" class="button">
+    </div>
+</form>
+<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+<script src="{{ static_url('js/account.js') }}"></script>
+{% end %}
+```
+
+As usual, we will `{% extends "base.html" %}` and write our new account form within `{% block content %}`. We will create 3 fields for our purpose: `username`, `password` and `confirm-password`. The purpose of the `confirm-password` field is just to make sure the user has typed in the correct password, which we will validate using Javascript from `js/account.js` that we include at the end. Our form will `post` to `/account/create/submit` if the validation is successful.
+
+We also change our `base.html` template to use the `/acccount/create` URL for `Sign Up`:
+
+```
+<p><a href="/account/create" class="button">Sign Up</a>&nbsp;<a href="/login" class="button">Log In</a></p>
+```
+
+## Create Account Script
+
+Now we create the Javascript that will handle the create account form submission. Create a new file `account.js` under `static/js` directory.
+
+```
+$(document).ready(function() {
+    $('#new-account-submit').click(function(e) {
+        if ($('#password').val() === $('#confirm-password').val()) {
+            $('#account-create-form').submit();
+        } else {
+            e.preventDefault();
+            alert('Password and Confirm Password do not match!');
+        }
+    });
+});
+```
+
+For our Javascript, we will first take the `password` field value and match with `confirm-password` field value. If they match, we simply call `submit` function of the `account-create-form`.
+
+However, if they don't match, we need to specifically call `e.preventDefault` so that the form submission will not happen. Then, we need to alert the user with a prompt, so that he can change the 2 password fields and make sure they match. 
+
+[Back to top](#table-of-contents)
+
+## After Create Account
+
+We will also create the views that are displayed after successfully creating an account, or when the account is not created, perhaps due to duplicate username. Let's call them `account_success.html` and `account_error.html`.
+
+### `account_success.html`
+
+```
+{% extends "base.html" %}
+{% block content %}
+<p>Your account has been created successfully. Please login at <a href="/login">Login Page</a> to start creating your list!</p>
+{% end %}
+```
+
+There is nothing special in this page. We just `{% extends "base.html" %}` and then tell the user the account is created, and point to the Login Page.
+
+### `account_error.html`
+
+```
+{% extends "base.html" %}
+{% block content %}
+<p>Error in creating your account. {% if reason %}{{ reason }}{% end %}</p>
+<p>Please try again <a href="/account/create">here</a></p>
+{% end %}
+```
+
+For the error page, there's an additional Python expression that checks for `reason` and display if it exists. Then we point to the New Account page again.
+
+[Back to top](#table-of-contents)
+
+## Create Account Handler and URL Mapping
+
+We now create the handlers to handle the `get` and `post` requests of the account page, using a new file `account.py` under `handlers`.
+
+```
+import tornado.web
+import hashlib
+
+
+class AccountHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def get(self):
+        self.render("account_create.html")
+
+    def post(self):
+        username = self.get_body_argument("username")
+        password = self.get_body_argument("password")
+        if username and password:
+            users = self.db['users']
+            if users.find_one({'username': username}):
+                self.render("account_error.html", reason="User already exists")
+            else:
+                hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
+                users.insert_one({'username': username, 'password': hashed_pass, 'is_admin': False, 'is_active': True})
+                self.render("account_success.html")
+        else:
+            self.render("account_error.html", reason="Invalid username or password")
+```
+
+Let's break this down. For the `get` function, it is just to render the `account_create.html` template. For the `post` function, we will first get the arguments `username` and `password` by calling `self.get_body_argument`. This will return us the values entered into the create account form.
+
+We should always check that the `username` and `password` are not empty, then we will try to check whether the `username` already exists by calling `find_one` from our `users` collection. If it already exists, we will render the `account_error.html` template and pass in the `reason`. Otherwise,  we will hash the password using the `md5` algorithm from `hashlib` module. It is required by the hashing algorithm to encode our string, so we will call `encode("utf-8")` from the `password` string before passing it into the `md5` function. Finally, we get the hashed string by calling `hexdigest`, which will return us a string in hexadecimal digits. This hashed password together with the username will be inserted by calling `users.insert_one`. Note that we will set `is_admin` as `False` and `is_active` as `True` for the time being. Later when we add on an advanced feature to deal with locking user account, we can make use of the `is_active` attribute.
+
+Finally, if we check that both `username` and `password` are empty, we will render the `account_error.html` template and pass in the `reason`.:w
+
+The URLs mapping will be defined in `urls.py` as such:
+
+```
+from handlers.account import AccountHandler
+```
+
+First, we import the `AccountHandler` from `handlers.account`.
+
+```
+url(r"/account/create", AccountHandler, dict(db=db)),
+url(r"/account/create/submit", AccountHandler, dict(db=db)),
+```
+
+Then we map `/account/create` and `/account/create/submit` to the `AccountHandler`.
 
 [Back to top](#table-of-contents)
 

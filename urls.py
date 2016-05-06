@@ -2,6 +2,7 @@ from tornado.web import url
 from handlers.main import MainHandler
 from handlers.list import ListHandler
 from handlers.auth import LoginHandler, LogoutHandler
+from handlers.account import AccountHandler
 from db import db
 
 
@@ -14,4 +15,6 @@ url_patterns = [
     url(r"/login", LoginHandler, dict(db=db)),
     url(r"/login/submit", LoginHandler, dict(db=db)),
     url(r"/logout", LogoutHandler, dict(db=db)),
+    url(r"/account/create", AccountHandler, dict(db=db)),
+    url(r"/account/create/submit", AccountHandler, dict(db=db)),
 ]
