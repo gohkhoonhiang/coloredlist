@@ -27,9 +27,9 @@ if options.config:
 
 # Define application settings
 settings = {}
-settings["debug"] = options.debug
-settings["static_path"] = STATIC_ROOT
-settings["template_path"] = TEMPLATE_ROOT
-settings["cookie_secret"] = options.cookie_secret
+settings['debug'] = options.debug
+settings['static_path'] = STATIC_ROOT
+settings['template_path'] = TEMPLATE_ROOT
+settings['cookie_secret'] = options.cookie_secret
 
 

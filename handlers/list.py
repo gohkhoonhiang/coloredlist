@@ -14,7 +14,7 @@ class ListHandler(tornado.web.RequestHandler):
     def post(self):
         list_items = self.db['lists']
         text = self.get_body_argument("text")
-        list_items.insert_one({'text':text, 'color':'Blue'})
+        list_items.insert_one({'text':text, 'color':"Blue"})
         self.redirect("/list")
 
     def put(self, item_id):

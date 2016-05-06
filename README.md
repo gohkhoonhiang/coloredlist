@@ -724,7 +724,7 @@ Since we have changed the data structure of the list item, we also need to updat
 
 ```
 {% for item in items %}
-    <li class="{{ item["color"] }}">
+    <li class="{{ item['color'] }}">
         <span><input type="hidden" id="edit-item-{{ item['_id'] }}-id" value="{{ item['_id'] }}"><input type="text" id="edit-item-{{ item['_id'] }}-text" name="text" value="{{ item['text'] }}"><a href="#" id="edit-item-{{ item['_id'] }}-submit" class="button edit-button">Edit</a><a href="#" id="delete-item-{{ item['_id'] }}-submit" class="button delete-button">Delete</a></span>
     </li>
 {% end %}
@@ -939,7 +939,7 @@ Now we can extend `base.html` in `list.html` like this:
 {% block content %}
 <ul>
 {% for item in items %}
-    <li class="{{ item["color"] }}">
+    <li class="{{ item['color'] }}">
         <span><input type="hidden" id="edit-item-{{ item['_id'] }}-id" value="{{ item['_id'] }}"><input type="text" id="edit-item-{{ item['_id'] }}-text" name="text" value="{{ item['text'] }}"><a href="#" id="edit-item-{{ item['_id'] }}-submit" class="button edit-button">Edit</a><a href="#" id="delete-item-{{ item['_id'] }}-submit" class="button delete-button">Delete</a></span>
     </li>
 {% end %}
