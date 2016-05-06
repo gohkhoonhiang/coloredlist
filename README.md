@@ -267,9 +267,9 @@ We will define it as a dictionary where the item ID will be the key and the item
 
 ```
 list_items = {
-    "1":{"id":"1","text":"Walk the dog","color":"Red"},
-    "2":{"id":"2","text":"Pick up dry cleaning","color":"Blue"},
-    "3":{"id":"3","text":"Milk","color":"Green"},
+    '1':{'id':"1",'text':"Walk the dog",'color':"Red"},
+    '2':{'id':"2",'text':"Pick up dry cleaning",'color':"Blue"},
+    '3':{'id':"3",'text':"Milk",'color':"Green"},
 }
 ```
 
@@ -338,7 +338,7 @@ class ListHandler(tornado.web.RequestHandler):
     def post(self):
         text = self.get_body_argument("text")
         item_id = str(uuid.uuid4())
-        list_items[item_id] = {"id":item_id,"text":text,"color":"Blue"}
+        list_items[item_id] = {'id':item_id,'text':text,'color':"Blue"}
         self.redirect("/list")
 ```
 As the client requests for `http://server:port/list`, the `ListHandler`'s `get` method will render the `list.html` page.
@@ -1538,7 +1538,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> client = pymongo.MongoClient("localhost", 27017)
 >>> db = client.coloredlistdb
 >>> users = db.users
->>> users.insert_one({"username": "admin", "password": hashed_pass, "is_active": True, "is_admin": True})
+>>> users.insert_one({'username': "admin", 'password': hashed_pass, 'is_active': True, 'is_admin': True})
 <pymongo.results.InsertOneResult object at 0x7fe0779c7dc8>
 >>>
 ```
@@ -1548,7 +1548,7 @@ In the Python console, we `import hashlib` which deals with hashing. Then we pas
 Since we are using the Python console to generate the hashed password, we might as well use it to insert the user into our database. We create a `MongoClient` and get the `users` collection from the `coloredlistdb`. Then we insert the `admin` user with the following details:
 
 ```
-{"username": "admin", "password": hashed_pass, "is_active": True, "is_admin": True}
+{'username': "admin", 'password': hashed_pass, 'is_active': True, 'is_admin': True}
 ```
 
 After this, if we query the database from the MongoDB shell, we should find the document created.
