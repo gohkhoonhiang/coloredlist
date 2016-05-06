@@ -367,7 +367,7 @@ from tornado.web import url
 
 <pre><code>&lt;ul&gt;
 {% for item_id in items %}
-    &lt;li class="{{ items[item_id]["color"] }}"&gt;
+    &lt;li class="{{ items[item_id]['color'] }}"&gt;
         &lt;span&gt;{{ items[item_id]['text'] }}&lt;/span&gt;
     &lt;/li&gt;
 {% end %}
@@ -387,7 +387,7 @@ from tornado.web import url
 
 <p>In our in-memory store, we use the item ID as the key for the item definition itself, so in order to access the item data, we will need to get the item dictionary and then the attribute.</p>
 
-<p>For example, we will use <code>{{ items[item_id]["text"] }}</code> to retrieve the text of the item with a specific <code>item_id</code>.</p>
+<p>For example, we will use <code>{{ items[item_id]['text'] }}</code> to retrieve the text of the item with a specific <code>item_id</code>.</p>
 
 <p>We have not added all the <code>&lt;head&gt;</code> and <code>&lt;body&gt;</code> tags in this template, because we are going to make use of template inheritance later.</p>
 
@@ -480,7 +480,7 @@ from tornado.web import url
         self.finish("Not found")
         return
     if item:
-        item["text"] = text
+        item['text'] = text
     self.set_status(200)
     self.finish("OK")
     return
@@ -794,7 +794,7 @@ def delete(self, item_id):
 <p>Since we have changed the data structure of the list item, we also need to update the list view to reflect the changes.</p>
 
 <pre><code>{% for item in items %}
-    &lt;li class="{{ item["color"] }}"&gt;
+    &lt;li class="{{ item['color'] }}"&gt;
         &lt;span&gt;&lt;input type="hidden" id="edit-item-{{ item['_id'] }}-id" value="{{ item['_id'] }}"&gt;&lt;input type="text" id="edit-item-{{ item['_id'] }}-text" name="text" value="{{ item['text'] }}"&gt;&lt;a href="#" id="edit-item-{{ item['_id'] }}-submit" class="button edit-button"&gt;Edit&lt;/a&gt;&lt;a href="#" id="delete-item-{{ item['_id'] }}-submit" class="button delete-button"&gt;Delete&lt;/a&gt;&lt;/span&gt;
     &lt;/li&gt;
 {% end %}
@@ -1007,7 +1007,7 @@ def delete(self, item_id):
 {% block content %}
 &lt;ul&gt;
 {% for item in items %}
-    &lt;li class="{{ item["color"] }}"&gt;
+    &lt;li class="{{ item['color'] }}"&gt;
         &lt;span&gt;&lt;input type="hidden" id="edit-item-{{ item['_id'] }}-id" value="{{ item['_id'] }}"&gt;&lt;input type="text" id="edit-item-{{ item['_id'] }}-text" name="text" value="{{ item['text'] }}"&gt;&lt;a href="#" id="edit-item-{{ item['_id'] }}-submit" class="button edit-button"&gt;Edit&lt;/a&gt;&lt;a href="#" id="delete-item-{{ item['_id'] }}-submit" class="button delete-button"&gt;Delete&lt;/a&gt;&lt;/span&gt;
     &lt;/li&gt;
 {% end %}
@@ -1123,9 +1123,9 @@ define("dbname", default="coloredlistdb", help="name of db")
 
 # Define application settings
 settings = {}
-settings["debug"] = options.debug
-settings["static_path"] = STATIC_ROOT
-settings["template_path"] = TEMPLATE_ROOT
+settings['debug'] = options.debug
+settings['static_path'] = STATIC_ROOT
+settings['template_path'] = TEMPLATE_ROOT
 </code></pre>
 
 <p>In the newly created <code>settings.py</code> file, we will define the <code>STATIC_ROOT</code> and <code>TEMPLATE_ROOT</code> variables to be used in the application settings for <code>static_path</code> and <code>template_path</code> respectively.</p>
@@ -1422,13 +1422,13 @@ class LoginHandler(tornado.web.RequestHandler):
         response = {}
         if self.get_secure_cookie("user"):
             self.set_secure_cookie("user", "")
-            response["status"] = 200
-            response["redirectUrl"] = "/login"
+            response['status'] = 200
+            response['redirectUrl'] = "/login"
             self.write(json.dumps(response))
         else:
-            response["status"] = 400
-            response["errorMsg"] = "User not in session"
-            response["redirectUrl"] = "/login"
+            response['status'] = 400
+            response['errorMsg'] = "User not in session"
+            response['redirectUrl'] = "/login"
             self.write(json.dumps(response))
 </code></pre>
 
@@ -1550,10 +1550,10 @@ define("config", default="config.conf", help="secret config")
 
 <p>To read the <code>config.conf</code> file, we will call the <code>parse_config_file</code> function, passing in the file name, which is defined in <code>options.config</code>.</p>
 
-<pre><code>settings["cookie_secret"] = options.cookie_secret
+<pre><code>settings['cookie_secret'] = options.cookie_secret
 </code></pre>
 
-<p>Finally, once we have read the option from <code>config.conf</code>, we can set it to our <code>settings["cookie_secret"]</code>, which will be passed to the <code>Application</code> object during creation.</p>
+<p>Finally, once we have read the option from <code>config.conf</code>, we can set it to our <code>settings['cookie_secret']</code>, which will be passed to the <code>Application</code> object during creation.</p>
 
 <p>Now, our application is ready for authentication.</p>
 
