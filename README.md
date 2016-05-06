@@ -1593,6 +1593,8 @@ We also change our `base.html` template to use the `/acccount/create` URL for `S
 <p><a href="/account/create" class="button">Sign Up</a>&nbsp;<a href="/login" class="button">Log In</a></p>
 ```
 
+[Back to top](#table-of-contents)
+
 ## Create Account Script
 
 Now we create the Javascript that will handle the create account form submission. Create a new file `account.js` under `static/js` directory.
