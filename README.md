@@ -294,7 +294,7 @@ To help us visualize the data, let's create the `list.html` template file first.
 ```
 <ul>
 {% for item_id in items %}
-    <li class="{{ items[item_id]["color"] }}">
+    <li class="{{ items[item_id]['color'] }}">
         <span>{{ items[item_id]['text'] }}</span>
     </li>
 {% end %}
@@ -314,7 +314,7 @@ Since we are going to have a list of items, it is logical to have a loop control
 
 In our in-memory store, we use the item ID as the key for the item definition itself, so in order to access the item data, we will need to get the item dictionary and then the attribute.
 
-For example, we will use `{{ items[item_id]["text"] }}` to retrieve the text of the item with a specific `item_id`.
+For example, we will use `{{ items[item_id]['text'] }}` to retrieve the text of the item with a specific `item_id`.
 
 We have not added all the `<head>` and `<body>` tags in this template, because we are going to make use of template inheritance later.
 
@@ -403,7 +403,7 @@ def put(self, item_id):
         self.finish("Not found")
         return
     if item:
-        item["text"] = text
+        item['text'] = text
     self.set_status(200)
     self.finish("OK")
     return
@@ -1054,9 +1054,9 @@ define("dbname", default="coloredlistdb", help="name of db")
 
 # Define application settings
 settings = {}
-settings["debug"] = options.debug
-settings["static_path"] = STATIC_ROOT
-settings["template_path"] = TEMPLATE_ROOT
+settings['debug'] = options.debug
+settings['static_path'] = STATIC_ROOT
+settings['template_path'] = TEMPLATE_ROOT
 ```
 
 In the newly created `settings.py` file, we will define the `STATIC_ROOT` and `TEMPLATE_ROOT` variables to be used in the application settings for `static_path` and `template_path` respectively.
@@ -1351,13 +1351,13 @@ class LogoutHandler(tornado.web.RequestHandler):
         response = {}
         if self.get_secure_cookie("user"):
             self.set_secure_cookie("user", "")
-            response["status"] = 200
-            response["redirectUrl"] = "/login"
+            response['status'] = 200
+            response['redirectUrl'] = "/login"
             self.write(json.dumps(response))
         else:
-            response["status"] = 400
-            response["errorMsg"] = "User not in session"
-            response["redirectUrl"] = "/login"
+            response['status'] = 400
+            response['errorMsg'] = "User not in session"
+            response['redirectUrl'] = "/login"
             self.write(json.dumps(response))
 ```
 
@@ -1486,10 +1486,10 @@ if options.config:
 To read the `config.conf` file, we will call the `parse_config_file` function, passing in the file name, which is defined in `options.config`.
 
 ```
-settings["cookie_secret"] = options.cookie_secret
+settings['cookie_secret'] = options.cookie_secret
 ```
 
-Finally, once we have read the option from `config.conf`, we can set it to our `settings["cookie_secret"]`, which will be passed to the `Application` object during creation.
+Finally, once we have read the option from `config.conf`, we can set it to our `settings['cookie_secret']`, which will be passed to the `Application` object during creation.
 
 Now, our application is ready for authentication.
 
