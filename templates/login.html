@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<form action="/login/submit" method="post">
+<form id="login-form">
     <div>
         <input type="text" name="username" id="username">
         <label for="username">Username</label>
@@ -9,4 +9,6 @@
     </div>
     <input type="submit" id="login-submit" value="Login" class="button">
 </form>
+<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+<script src="{{ static_url('js/login.js') }}"></script>
 {% end %}
