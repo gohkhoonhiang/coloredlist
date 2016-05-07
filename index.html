@@ -113,6 +113,7 @@
 <li><a href="#create-account-script">Create Account Script</a></li>
 <li><a href="#after-create-account">After Create Account</a></li>
 <li><a href="#create-account-handler-and-url-mapping">Create Account Handler and URL Mapping</a></li>
+<li><a href="#authenticate-user-with-password">Authenticate User with Password</a></li>
 </ul>
 </li>
 </ul>
@@ -1745,7 +1746,7 @@ class AccountHandler(tornado.web.RequestHandler):
 
 <p>We should always check that the <code>username</code> and <code>password</code> are not empty, then we will try to check whether the <code>username</code> already exists by calling <code>find_one</code> from our <code>users</code> collection. If it already exists, we will render the <code>account_error.html</code> template and pass in the <code>reason</code>. Otherwise,  we will hash the password using the <code>md5</code> algorithm from <code>hashlib</code> module. It is required by the hashing algorithm to encode our string, so we will call <code>encode("utf-8")</code> from the <code>password</code> string before passing it into the <code>md5</code> function. Finally, we get the hashed string by calling <code>hexdigest</code>, which will return us a string in hexadecimal digits. This hashed password together with the username will be inserted by calling <code>users.insert_one</code>. Note that we will set <code>is_admin</code> as <code>False</code> and <code>is_active</code> as <code>True</code> for the time being. Later when we add on an advanced feature to deal with locking user account, we can make use of the <code>is_active</code> attribute.</p>
 
-<p>Finally, if we check that both <code>username</code> and <code>password</code> are empty, we will render the <code>account_error.html</code> template and pass in the <code>reason</code>.:w</p>
+<p>Finally, if we check that both <code>username</code> and <code>password</code> are empty, we will render the <code>account_error.html</code> template and pass in the <code>reason</code>.</p>
 
 <p>The URLs mapping will be defined in <code>urls.py</code> as such:</p>
 
@@ -1759,6 +1760,120 @@ url(r"/account/create/submit", AccountHandler, dict(db=db)),
 </code></pre>
 
 <p>Then we map <code>/account/create</code> and <code>/account/create/submit</code> to the <code>AccountHandler</code>.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="authenticate-user-with-password" class="anchor" href="#authenticate-user-with-password" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authenticate User with Password</h2>
+
+<p>Now that we have created <code>password</code> in our user accounts, we can change our authentication logic to validate login password against the database.</p>
+
+<p>First, we need to make some changes to our <code>login.html</code> template.</p>
+
+<pre><code>{% extends "base.html" %}
+{% block content %}
+&lt;form id="login-form"&gt;
+    &lt;div&gt;
+        &lt;input type="text" name="username" id="username"&gt;
+        &lt;label for="username"&gt;Username&lt;/label&gt;
+        &lt;input type="password" name="password" id="password"&gt;
+        &lt;label for="password"&gt;Password&lt;/label&gt;
+    &lt;/div&gt;
+    &lt;input type="submit" id="login-submit" value="Login" class="button"&gt;
+&lt;/form&gt;
+&lt;script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="{{ static_url('js/login.js') }}"&gt;&lt;/script&gt;
+{% end %}
+</code></pre>
+
+<p><em>It's worth noting that we are now moving towards using AJAX for form submit, because we want to implement a RESTful server that returns JSON response. We will only use <code>&lt;a&gt;</code> tag for getting rendered response. Let's start refactoring our code from the authentication module, and we will refactor the rest of the application whenever necessary.</em> </p>
+
+<p>We have removed the <code>action</code> and <code>method</code> attributes of the <code>form</code>, instead, we will use AJAX to post the form data to the server, we are going to include the jQuery scripts and a new <code>js/login.js</code> file.</p>
+
+<p>In the new <code>js/login.js</code> file, we will bind a function to the <code>login-submit</code> button's <code>click</code> event:</p>
+
+<pre><code>$(document).ready(function() {
+    $('#login-submit').click(function(e) {
+        e.preventDefault();
+        var username = $('#username').val();
+        var password = $('#password').val();
+        if (username &amp;&amp; password) {
+            $.ajax({
+                type: "POST",
+                url: "/login/submit",
+                dataType: "json",
+                data: {"username":username, "password":password},
+                success: function(response) {
+                    if (response) {
+                        if (response.status != 200 &amp;&amp; response.errorMsg) {
+                            alert(response.errorMsg || "Unable to login");
+                        }
+                        if (response.redirectUrl) {
+                            window.location.href = response.redirectUrl;
+                        }
+                    }
+                },
+            });
+        } else {
+            alert("Please enter both username and password");
+        }
+    });
+});
+</code></pre>
+
+<p>Since we are not going to do the traditional form submit, we will need to prevent the form submission by calling <code>e.preventDefault</code>. Then, we will extract the <code>username</code> and <code>password</code> fields, check that they are not empty and make the AJAX call to <code>/login/submit</code> with the <code>username</code> and <code>password</code> as form data. Upon successful request, we will get the <code>response</code> object and check the <code>status</code> code. If it is not <code>200</code>, we will try to display the <code>errorMsg</code>. If a <code>redirectUrl</code> is provided, we will redirect our page to the given URL.</p>
+
+<p>We also try to validate that the <code>username</code> and <code>password</code> fields are entered, so we will prompt an error message for failing to enter either field, and we will not attempt to post the login details in this case.</p>
+
+<p>Next, let's change our <code>handlers/auth.py</code> file to reflect the logic:</p>
+
+<pre><code>import tornado.web
+import json
+import hashlib
+
+
+class LoginHandler(tornado.web.RequestHandler):
+    # omitted code here
+    def get(self):
+        self.render("login.html")
+
+    def post(self):
+        username = self.get_body_argument("username")
+        password = self.get_body_argument("password")
+        users = self.db['users']
+        response = {}
+        if username and password:
+            user = users.find_one({'username': username})
+            if user:
+                stored_pass = user['password']
+                hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
+                if hashed_pass == stored_pass:
+                    self.set_secure_cookie("user", username)
+                    response['status'] = 200
+                    response['redirectUrl'] = "/list"
+                    self.write(json.dumps(response))
+                else:
+                    response['status'] = 403
+                    response['errorMsg'] = "Invalid username or password"
+                    response['redirectUrl'] = "/login"
+                    self.write(json.dumps(response))
+            else:
+                response['status'] = 403
+                response['errorMsg'] = "Invalid username or password"
+                response['redirectUrl'] = "/login"
+                self.write(json.dumps(response))
+        else:
+            response['status'] = 403
+            response['errorMsg'] = "Invalid username or password"
+            response['redirectUrl'] = "/login"
+            self.write(json.dumps(response))
+</code></pre>
+
+<p>We have a new <code>import hashlib</code> which will be in charge of hashing passwords.</p>
+
+<p>There are quite a few changes in our <code>post</code> function. Now that we will validate the login username and password against the database, we will need to extract both fields from the request body by calling <code>self.get_body_argument</code>. We then get the <code>users</code> collection from <code>self.db</code>, and try to find the document with matching <code>username</code>. If the it is found, then we hash the <code>password</code> from the request body by using <code>hashlib.md5(password.encode("utf-8")).hexdigest</code> function. If this hashed password matches the password from the database, then we can set the user in our session cookie by <code>self.set_secure_cookie("user", username)</code>. For successful authentication, we return <code>response['status'] = 200</code> and <code>response['redirectUrl'] = "/list"</code>. To write the JSON response, we call <code>json.dumps(response)</code> and pass to <code>self.write</code>.</p>
+
+<p>If the username or password is not provided, or if the username does not match any in our database, or if the password does not match, then we will return <code>response['status'] = 403</code>, <code>response['errorMsg'] = "Invalid username or password"</code> and <code>response['redirectUrl'] = "/login"</code>. <code>403</code> status code indicates <code>Forbidden</code>, and we provide a human-friendly error message <code>Invalid username or password</code>, then redirect the client back to <code>/login</code> URL.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
