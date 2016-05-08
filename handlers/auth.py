@@ -49,10 +49,12 @@ class LogoutHandler(tornado.web.RequestHandler):
         response = {}
         if self.get_secure_cookie("user"):
             self.set_secure_cookie("user", "")
+            self.set_secure_cookie("list_id", "")
             response['status'] = 200
             response['redirectUrl'] = "/login"
             self.write(json.dumps(response))
         else:
+            self.set_secure_cookie("list_id", "")
             response['status'] = 400
             response['errorMsg'] = "User not in session"
             response['redirectUrl'] = "/login"

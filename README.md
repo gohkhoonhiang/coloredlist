@@ -51,6 +51,7 @@
 * [Revisit List and User Authentication](#revisit-list-and-user-authentication)
   * [Redefine List Collection](#redefine-list-collection)
   * [Create Default List for New User](#create-default-list-for-new-user)
+  * [Authenticate User and Load List](#authenticate-user-and-load-list)
 
 
 # Introduction
@@ -2003,5 +2004,55 @@ $(document).ready(function() {
 Instead of the default form action, we will attach a function to the `new-account-submit`'s `click` event. We will call `e.preventDefault` to stop the submit action and use AJAX call to send a `POST` request to `/account/create/submit` with the `username` and `password` as data. Upon success, we will display any `errorMsg` and redirect to `redirectUrl` whenever available.
 
 We should help users type the correct password by making sure the `password` and `confirm-password` fields match, or we will prmopt a message. To make sure we do not send empty `username` and `password`, we should prompt a message if the fields are empty.
+
+[Back to top](#table-of-contents)
+
+## Authenticate User and Load List
+
+Now that we have linked up the user account with a list, we should load the correct list for each user who is authenticated successfully. When user has logged in and we redirect to the `/list` page, we need to get the corresponding list from the database.
+
+For that, let's change our `handlers/list.py` file:
+
+```
+def get(self):
+    username = self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
+    if username:
+        lists = self.db['lists']
+        list_items = self.db['list_items']
+        user_list = lists.find_one({'username': username})
+        items = []
+        if user_list:
+            list_id = user_list['_id']
+            self.set_secure_cookie("list_id", str(list_id))
+            items_cursor = list_items.find({'list_id': list_id})
+            if items_cursor is not None:
+                items = [item for item in items_cursor]
+        self.render("list.html", items=items)
+    else:
+        self.render("login.html")
+```
+
+In the `get` function, we will get the `username` from session, then try to find the corresponding list by calling `lists.find_one({'username': username})`. If it is found, we will store the `list_id` in session, then retrieve the list of items from `list_items.find({'list_id': list_id})` and set to `items` variable in the `list.html` template.
+
+In any case that the user has been logged out, we will simply render the `login.html` page so that the user can re-login to access the list.
+
+On the other hand, if the user is no longer logged in, we should also remove the `list_id` from the secure_cookie store by changing the `LogoutHandler`:
+
+```
+def post(self):
+    response = {}
+    if self.get_secure_cookie("user"):
+        self.set_secure_cookie("user", "")
+        self.set_secure_cookie("list_id", "")
+        response['status'] = 200
+        response['redirectUrl'] = "/login"
+        self.write(json.dumps(response))
+    else:
+        self.set_secure_cookie("list_id", "")
+        response['status'] = 400
+        response['errorMsg'] = "User not in session"
+        response['redirectUrl'] = "/login"
+        self.write(json.dumps(response))
+```
 
 [Back to top](#table-of-contents)

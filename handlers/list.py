@@ -1,5 +1,6 @@
 import tornado.web
 from bson.objectid import ObjectId
+import json
 
 
 class ListHandler(tornado.web.RequestHandler):
@@ -7,9 +8,21 @@ class ListHandler(tornado.web.RequestHandler):
         self.db = db
 
     def get(self):
-        list_items = self.db['lists']
-        items = [item for item in list_items.find()]
-        self.render("list.html", items=items)
+        username = self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
+        if username:
+            lists = self.db['lists']
+            list_items = self.db['list_items']
+            user_list = lists.find_one({'username': username})
+            items = []
+            if user_list:
+                list_id = user_list['_id']
+                self.set_secure_cookie("list_id", str(list_id))
+                items_cursor = list_items.find({'list_id': list_id})
+                if items_cursor is not None:
+                    items = [item for item in items_cursor]
+            self.render("list.html", items=items)
+        else:
+            self.render("login.html")
 
     def post(self):
         list_items = self.db['lists']
