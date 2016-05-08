@@ -25,36 +25,90 @@ class ListHandler(tornado.web.RequestHandler):
             self.render("login.html")
 
     def post(self):
-        list_items = self.db['lists']
-        text = self.get_body_argument("text")
-        list_items.insert_one({'text':text, 'color':"Blue"})
-        self.redirect("/list")
+        username = self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
+        response = {}
+        if username:
+            lists = self.db['lists']
+            list_items = self.db['list_items']
+            text = self.get_body_argument("text")
+            if text:
+                list_id = self.get_secure_cookie("list_id").decode("utf-8") if self.get_secure_cookie("list_id") else None
+                if list_id:
+                    list_items.insert_one({'list_id': ObjectId(list_id), 'text':text, 'color':"Blue", 'status':"Open"})
+            response['status'] = 201
+            response['redirectUrl'] = "/list"
+            self.write(json.dumps(response))
+        else:
+            response['status'] = 403
+            response['errorMsg'] = "Please login to access your list"
+            response['redirectUrl'] = "/login"
+            self.write(json.dumps(response))
 
     def put(self, item_id):
-        list_items = self.db['lists']
-        text = self.get_body_argument("text")
-        item = list_items.find_one({'_id':ObjectId(item_id)})
-        if item:
-            list_items.update_one({'_id':ObjectId(item_id)}, {'$set':{'text':text}})
-            self.set_status(200)
-            self.finish("OK")
-            return
+        username = self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
+        response = {}
+        if username:
+            lists = self.db['lists']
+            list_items = self.db['list_items']
+            text = self.get_body_argument("text")
+            if text:
+                list_id = self.get_secure_cookie("list_id").decode("utf-8") if self.get_secure_cookie("list_id") else None
+                if list_id:
+                    item = list_items.find({'_id': ObjectId(item_id)})
+                    if item:
+                        list_items.update_one({'_id':ObjectId(item_id)}, {'$set':{'text':text}})
+                        response['status'] = 200
+                        response['redirectUrl'] = "/list"
+                        self.write(json.dumps(response))
+                    else:
+                        response['status'] = 404
+                        response['errorMsg'] = "Item not found"
+                        response['redirectUrl'] = "/list"
+                        self.write(json.dumps(response))
+                else:
+                    response['status'] = 404
+                    response['errorMsg'] = "List not in session. Please re-login"
+                    response['redirectUrl'] = "/login"
+                    self.write(json.dumps(response))
+            else:
+                response['status'] = 400
+                response['errorMsg'] = "Empty list item text"
+                response['redirectUrl'] = "/list"
+                self.write(json.dumps(response))
         else:
-            self.set_status(404)
-            self.finish("Not found")
-            return
+            response['status'] = 403
+            response['errorMsg'] = "Please login to access your list"
+            response['redirectUrl'] = "/login"
+            self.write(json.dumps(response))
 
     def delete(self, item_id):
-        list_items = self.db['lists']
-        item = list_items.find_one({'_id':ObjectId(item_id)})
-        if item:
-            list_items.remove({'_id':ObjectId(item_id)})
-            self.set_status(200)
-            self.finish("OK")
-            return
+        username = self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
+        response = {}
+        if username:
+            lists = self.db['lists']
+            list_items = self.db['list_items']
+            list_id = self.get_secure_cookie("list_id").decode("utf-8") if self.get_secure_cookie("list_id") else None
+            if list_id:
+                item = list_items.find({'_id': ObjectId(item_id)})
+                if item:
+                    list_items.remove({'_id':ObjectId(item_id)})
+                    response['status'] = 200
+                    response['redirectUrl'] = "/list"
+                    self.write(json.dumps(response))
+                else:
+                    response['status'] = 404
+                    response['errorMsg'] = "Item not found"
+                    response['redirectUrl'] = "/list"
+                    self.write(json.dumps(response))
+            else:
+                response['status'] = 404
+                response['errorMsg'] = "List not in session. Please re-login"
+                response['redirectUrl'] = "/login"
+                self.write(json.dumps(response))
         else:
-            self.set_status(404)
-            self.finish("Not found")
-            return
+            response['status'] = 403
+            response['errorMsg'] = "Please login to access your list"
+            response['redirectUrl'] = "/login"
+            self.write(json.dumps(response))
 
 

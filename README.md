@@ -52,6 +52,7 @@
   * [Redefine List Collection](#redefine-list-collection)
   * [Create Default List for New User](#create-default-list-for-new-user)
   * [Authenticate User and Load List](#authenticate-user-and-load-list)
+  * [Revisit List Item Operations](#revisit-list-item-operations)
 
 
 # Introduction
@@ -2056,3 +2057,229 @@ def post(self):
 ```
 
 [Back to top](#table-of-contents)
+
+## Revisit List Item Operations
+
+Since our list data structure has changed, we should also revisit our list operations.
+
+### Add New Item
+
+To store a new item to the `list_items` collection, we need to change our `handlers/list.py` file:
+
+```
+def post(self):
+    username = self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
+    response = {}
+    if username:
+        lists = self.db['lists']
+        list_items = self.db['list_items']
+        text = self.get_body_argument("text")
+        if text:
+            list_id = self.get_secure_cookie("list_id").decode("utf-8") if self.get_secure_cookie("list_id") else None
+            if list_id:
+                list_items.insert_one({'list_id': ObjectId(list_id), 'text':text, 'color':"Blue", 'status':"Open"})
+        response['status'] = 201
+        response['redirectUrl'] = "/list"
+        self.write(json.dumps(response))
+    else:
+        response['status'] = 403
+        response['errorMsg'] = "Please login to access your list"
+        response['redirectUrl'] = "/login"
+        self.write(json.dumps(response))
+```
+
+We need to make sure the user is in session by calling `self.get_secure_cookie("user")` and make sure it exists. Then we will retrieve the user's list by using the `list_id` in `self.get_seccure_cookie`, create a new list item using the given `text` in `self.get_body_argument("text")` and call `list_items.insert_one` to add the item to the list. If it's all successful, we will return `response['status'] = 201` and `response['redirectUrl'] = "/list"` to indicate `Created` status and let the client redirect to the list to reflect the change.
+
+If the user is no longer in session, we will need to return `response['status'] = 403` for `Forbidden`, provide the appropriate `response['errorMsg'] = "Please login to access your list"` message, and `response['redirectUrl'] = "/login" will allow the client to redirect to login page.
+
+We will refactor the function to use AJAX call in the front-end and handle the JSON response from the back-end. First, in our `templates/list.html`, we will remove the `action` and `method` attributes from the `add-new` form.
+
+```
+<form id="add-new">
+    <div>
+        <input type="text" id="new-list-item-text" name="text">
+        <input type="submit" id="new-item-submit" value="Add" class="button">
+    </div>
+</form>
+```
+
+Then we modify the `static/js/list.js` file to make the AJAX call for sending the new item data:
+
+```
+$('#new-item-submit').click(function(e) {
+    e.preventDefault();
+    var text = $('#new-list-item-text').val();
+    if (text) {
+        var url = "/list/create";
+        $.ajax({
+            type: "POST",
+            url: url,
+            dataType: "json",
+            data: {"text": text},
+            success: function(response) {
+                if (response) {
+                    if (response.status != 201 && response.errorMsg) {
+                        alert(response.errorMsg || "Create item failed");
+                    }
+                    if (response.redirectUrl) {
+                        window.location.href = response.redirectUrl;
+                    }
+                }
+            },
+        });
+    } else {
+        alert("Item text should not be empty.");
+    }
+});
+```
+
+As with other AJAX calls, we will stop the default submit action by calling `e.preventDefault`, then `post` a request to `/list/create` with the `text` data. Upon success, we try to display any `errorMsg` and redirect to `redirectUrl` whenever available. If the `text` is empty, we will not attempt to send the request, but prompt an error message instead.
+
+### Edit List Item
+
+For edit function, it will be a little complicated due to a handful of validations to be done.
+
+```
+def put(self, item_id):
+    username = self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
+    response = {}
+    if username:
+        lists = self.db['lists']
+        list_items = self.db['list_items']
+        text = self.get_body_argument("text")
+        if text:
+            list_id = self.get_secure_cookie("list_id").decode("utf-8") if self.get_secure_cookie("list_id") else None
+            if list_id:
+                item = list_items.find({'_id': ObjectId(item_id)})
+                if item:
+                    list_items.update_one({'_id':ObjectId(item_id)}, {'$set':{'text':text}})
+                    response['status'] = 200
+                    response['redirectUrl'] = "/list"
+                    self.write(json.dumps(response))
+                else:
+                    response['status'] = 404
+                    response['errorMsg'] = "Item not found"
+                    response['redirectUrl'] = "/list"
+                    self.write(json.dumps(response))
+            else:
+                response['status'] = 404
+                response['errorMsg'] = "List not in session. Please re-login"
+                response['redirectUrl'] = "/login"
+                self.write(json.dumps(response))
+        else:
+            response['status'] = 400
+            response['errorMsg'] = "Empty list item text"
+            response['redirectUrl'] = "/list"
+            self.write(json.dumps(response))
+    else:
+        response['status'] = 403
+        response['errorMsg'] = "Please login to access your list"
+        response['redirectUrl'] = "/login"
+        self.write(json.dumps(response))
+```
+
+In our `handlers/list.py` file, we will change the `put` function to make use of the new list data structure. To make sure the request is genuine, we check that the `username` is in `self.get_secure_cookie("user")` and return `response['status'] = 403` if it is not. We also need to make sure the `text` is not empty, and will return `response['status'] = 400` if it is. Just in case the `list_id` is not found in `self.get_secure_cookie("list_id")`, we will return `response['status'] = 404` as well. Finally we will validate the `item_id` actually exists in the database by calling `list_items.find` with the `item_id`, and will return `response['status'] = 404` if no item is found. After all the various validations, we can finally call `list_items.update_one` and pass in the `{'$set':{'text':text}}` as the modification to apply. This will return `response['status'] = 200` to indicate `OK` status.
+
+For `user` and `list_id` not found in `self.get_secure_cookie`, it means that the user is no longer logged in, and we should return `response['redirectUrl'] = "/login"` so that the client can redirect to the login page for user to re-login. Otherwise, we will just return `response['redirectUrl'] = "/list"` for the client to refresh the list page.
+
+We also change our `static/js/list.js` file to handle the new RESTful JSON response from the server.
+
+```
+$('.edit-button').click(function() {
+    var itemSpan = $(this).parent();
+    var itemId = $(itemSpan).find("input[type='hidden']").val();
+    var text = $(itemSpan).find("input[name='text']").val();
+    if (text) {
+        var url = "/list/" + itemId + "/edit";
+        $.ajax({
+            type: "PUT",
+            url: url,
+            dataType: "json",
+            data: {"text": text},
+            success: function(response) {
+                if (response) {
+                    if (response.status != 200 && response.errorMsg) {
+                        alert(response.errorMsg || "Update item failed");
+                    }
+                    if (response.redirectUrl) {
+                        window.location.href = response.redirectUrl;
+                    }
+                }
+            },
+        });
+    } else {
+        alert("Item text should not be empty.");
+    }
+});
+```
+
+We will check that the `text` field is not empty, then send a `PUT` request to `/list/<itemid>/edit` with `text` data. Upon success, we will display any `errorMsg` and redirect to `redirectUrl` whenever available.
+
+### Delete List Item
+
+The delete logic will be similar to the edit logic, except that instead of calling `list_items.update_one`, we will call `list_items.remove`.
+
+```
+def delete(self, item_id):
+    username = self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
+    response = {}
+    if username:
+        lists = self.db['lists']
+        list_items = self.db['list_items']
+        list_id = self.get_secure_cookie("list_id").decode("utf-8") if self.get_secure_cookie("list_id") else None
+        if list_id:
+            item = list_items.find({'_id': ObjectId(item_id)})
+            if item:
+                list_items.remove({'_id':ObjectId(item_id)})
+                response['status'] = 200
+                response['redirectUrl'] = "/list"
+                self.write(json.dumps(response))
+            else:
+                response['status'] = 404
+                response['errorMsg'] = "Item not found"
+                response['redirectUrl'] = "/list"
+                self.write(json.dumps(response))
+        else:
+            response['status'] = 404
+            response['errorMsg'] = "List not in session. Please re-login"
+            response['redirectUrl'] = "/login"
+            self.write(json.dumps(response))
+    else:
+        response['status'] = 403
+        response['errorMsg'] = "Please login to access your list"
+        response['redirectUrl'] = "/login"
+        self.write(json.dumps(response))
+```
+
+There is no need to validate `text` input here. We just need to make sure the `user` and `list_id` are still in `self.get_secure_cookie`, and the `item_id` exists in the database, then we can `list_items.remove` the item.
+
+Our `static/js/list.js` file will also be modified:
+
+```
+$('.delete-button').click(function() {
+    var itemSpan = $(this).parent();
+    var itemId = $(itemSpan).find("input[type='hidden']").val();
+    var url = "/list/" + itemId + "/delete";
+    $.ajax({
+        type: "DELETE",
+        url: url,
+        dataType: "json",
+        data: {},
+        success: function(response) {
+            if (response) {
+                if (response.status != 200 && response.errorMsg) {
+                    alert(response.errorMsg || "Delete item failed");
+                }
+                if (response.redirectUrl) {
+                    window.location.href = response.redirectUrl;
+                }
+            }
+        },
+    });
+});
+```
+
+You can see that it is similar in structure as the edit function, except that we don't need to pass the `text` field as data to the request.
+
+[Back to top](#table-of-contents)
+
