@@ -48,6 +48,9 @@
   * [After Create Account](#after-create-account)
   * [Create Account Handler and URL Mapping](#create-account-handler-and-url-mapping)
   * [Authenticate User with Password](#authenticate-user-with-password)
+* [Revisit List and User Authentication](#revisit-list-and-user-authentication)
+  * [Redefine List Collection](#redefine-list-collection)
+  * [Create Default List for New User](#create-default-list-for-new-user)
 
 
 # Introduction
@@ -1844,5 +1847,161 @@ $(document).ready(function() {
 ```
 
 The logic is the same as before, only difference is that we specify the `dataType` to be `json` so that we don't have to `JSON.parse` the response. We also check that there is a `redirectUrl` and set the `window.location.href` accordingly.
+
+[Back to top](#table-of-contents)
+
+# Revisit List and User Authentication
+
+Now that we have introduced the concept of an user account, we should revisit our list data structure and incorporate the concept of ownership for each list.
+
+If we look at our previously defined `lists` collection, it is just a list of `item`s with `text` and `color`. However, this does not serve our purpose well. 
+
+We will have to redefine our `lists` collection and assign a `username` to indicate ownership. Then we will create a separate collection just for `list_items`, and link back to the `lists` by the `lists`'s `_id`.
+
+[Back to top](#table-of-contents)
+
+## Redefine List Collection
+
+First of all, let's remove the existing documents in the `lists` collection.
+
+```
+> mongo
+MongoDB shell version: 3.2.6
+connecting to: test
+> use coloredlistdb
+switched to db coloredlistdb
+> db.lists.remove({})
+WriteResult({ "nRemoved" : 5 })
+> db.lists.find()
+>
+```
+
+We will call up the MongoDB shell, switch to `coloredlistdb`, then run the `db.lists.remove` command. The `lists` collection should now be empty.
+
+Then we will define a new data structure for our `lists` collection as such:
+
+```
+> db.lists.insert({
+... list_name: "Default",
+... username: "admin",
+... share_link: "",
+... })
+WriteResult({ "nInserted" : 1 })
+> db.lists.find()
+{ "_id" : ObjectId("572d8d3909d5ea66b520225f"), "list_name" : "Default", "username" : "admin", "share_link" : "" }
+>
+```
+
+We will let user name each list and store it in `list_name`. `username` will indicate that this list belongs to the username specified, for the time being, we will assign it to our `admin` user that we have created earlier. We will also have a `share_link` for publicly-accessible read-only view of the list.
+
+Next, we will define a new collection `list_items` that will store the actual list item details.
+
+```
+> db.createCollection("list_items")
+{ "ok" : 1 }
+> db.list_items.insert({
+... "list_id":ObjectId("572d8d3909d5ea66b520225f"),
+... "text":"Walk the dog",
+... "color":"Red",
+... "status":"open",
+... })
+WriteResult({ "nInserted" : 1 })
+>
+```
+
+Our `list_items` will have a link to the `lists` collection through the `list_id`. Then we put back the `text` and `color` fields from our previous definition. Finally, we add a new field `status` to indicate the status of the item, the default value is `open`.
+
+We will insert 2 more default items with the same data structure and now our list should have the following items.
+
+```
+> db.list_items.find()
+{ "_id" : ObjectId("572d903e3f9d3719da74684b"), "list_id" : ObjectId("572d8d3909d5ea66b520225f"), "text" : "Walk the dog", "color" : "Red", "status" : "open" }
+{ "_id" : ObjectId("572d90f03f9d3719da74684c"), "list_id" : ObjectId("572d8d3909d5ea66b520225f"), "text" : "Pick up dry cleaning", "color" : "Blue", "status" : "open" }
+{ "_id" : ObjectId("572d91053f9d3719da74684d"), "list_id" : ObjectId("572d8d3909d5ea66b520225f"), "text" : "Milk", "color" : "Green", "status" : "open" }
+>
+```
+
+[Back to top](#table-of-contents)
+
+## Create Default List for New User
+
+Now that we have redefined our `lists` data strucutre, we need to link it up with our `users` in the create account logic.
+
+```
+def post(self):
+    username = self.get_body_argument("username")
+    password = self.get_body_argument("password")
+    response = {}
+    if username and password:
+        users = self.db['users']
+        lists = self.db['lists']
+        if users.find_one({'username': username}):
+            response['status'] = 400
+            response['errorMsg'] = "User already exists"
+            response['redirectUrl'] = "/account/create"
+            self.write(json.dumps(response))
+        else:
+            hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
+            users.insert_one({'username': username, 'password': hashed_pass, 'is_admin': False, 'is_active': True})
+            lists.insert_one({'list_name':"Default", 'username': username, 'share_link': ""})
+            self.set_secure_cookie("user", username)
+            response['status'] = 201
+            response['redirectUrl'] = "/list"
+            self.write(json.dumps(response))
+    else:
+        response['status'] = 400
+        response['errorMsg'] = "Invalid username or password"
+        response['redirectUrl'] = "/account/create"
+        self.write(json.dumps(response))
+```
+
+Inside `handlers/account.py`, we will change the `post` function to add in the logic to create a default list for the new user. This is done by getting the `lists` collection from `self.db`, then perform a `lists.insert_one` with the `username` field being set to the new `username` from the sign up. We will also add the user directly in the session, and redirect to the `/list` page instead of showing them the `account_success.html` page.
+
+Now, all new accounts will be assigned a default list and the users can immediately add new items to a list without having to login.
+
+Similarly, if the account creation failed, we redirect them to the `/account/create` page with an error message, instead of showing them the `account_error.html` page, so that they can directly enter a new username without having to click a link to go back to the new account page.
+
+With this change, we can remove `account_success.html` and `account_error.html` from `templates` directory.
+
+As we change our back-end into a RESTful function, we also need to change our client `static/js/account.js`.
+
+```
+$(document).ready(function() {
+    $('#new-account-submit').click(function(e) {
+        e.preventDefault();
+        var username = $('#username').val();
+        var password = $('#password').val();
+        var confirm_password = $('#confirm-password').val();
+        if (username && password && confirm_password) {
+            if (password === confirm_password) {
+                $.ajax({
+                    type: "POST",
+                    url: "/account/create/submit",
+                    dataType: "json",
+                    data: {"username": username, "password": password},
+                    success: function(response) {
+                        if (response) {
+                            if (response.status != 201 && response.errorMsg) {
+                                alert(response.errorMsg || "Failed to create account");
+                            }
+                            if (response.redirectUrl) {
+                                window.location.href = response.redirectUrl;
+                            }
+                        }
+                    },
+                });
+            } else {
+                alert("Password and Confirm Password do not match!");
+            }
+        } else {
+            alert("Username, password and confirm password should not be empty");
+        }
+    });
+});
+```
+
+Instead of the default form action, we will attach a function to the `new-account-submit`'s `click` event. We will call `e.preventDefault` to stop the submit action and use AJAX call to send a `POST` request to `/account/create/submit` with the `username` and `password` as data. Upon success, we will display any `errorMsg` and redirect to `redirectUrl` whenever available.
+
+We should help users type the correct password by making sure the `password` and `confirm-password` fields match, or we will prmopt a message. To make sure we do not send empty `username` and `password`, we should prompt a message if the fields are empty.
 
 [Back to top](#table-of-contents)
