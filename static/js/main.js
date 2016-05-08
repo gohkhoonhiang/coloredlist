@@ -3,17 +3,18 @@ $(document).ready(function() {
         $.ajax({
             type: "POST",
             url: "/logout",
+            dataType: "json",
+            data: {},
             success: function(response) {
                 if (response) {
-                    response = JSON.parse(response);
-                    if (response.status == 200) {
-                        alert(response.errorMsg || "Logged out successfully.");
-                    } else {
+                    if (response.status != 200 && response.errorMsg) {
                         alert(response.errorMsg || "Error logging out");
                     }
-                    window.location.href = response.redirectUrl;
+                    if (response.redirectUrl) {
+                        window.location.href = response.redirectUrl;
+                    }
                 }
-            }
+            },
         });
     }); 
 });

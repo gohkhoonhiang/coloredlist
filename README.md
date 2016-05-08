@@ -1816,4 +1816,33 @@ There are quite a few changes in our `post` function. Now that we will validate 
 
 If the username or password is not provided, or if the username does not match any in our database, or if the password does not match, then we will return `response['status'] = 403`, `response['errorMsg'] = "Invalid username or password"` and `response['redirectUrl'] = "/login"`. `403` status code indicates `Forbidden`, and we provide a human-friendly error message `Invalid username or password`, then redirect the client back to `/login` URL.
 
+Since we are refactoring our authentication module, let's also do some housekeeping on our logout AJAX call to make it consistent with our login AJAX call.
+
+### `static/js/main.js`
+
+```
+$(document).ready(function() {
+    $('#logout-btn').click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/logout",
+            dataType: "json",
+            data: {},
+            success: function(response) {
+                if (response) {
+                    if (response.status != 200 && response.errorMsg) {
+                        alert(response.errorMsg || "Error logging out");
+                    }
+                    if (response.redirectUrl) {
+                        window.location.href = response.redirectUrl;
+                    }
+                }
+            },
+        });
+    }); 
+});
+```
+
+The logic is the same as before, only difference is that we specify the `dataType` to be `json` so that we don't have to `JSON.parse` the response. We also check that there is a `redirectUrl` and set the `window.location.href` accordingly.
+
 [Back to top](#table-of-contents)
