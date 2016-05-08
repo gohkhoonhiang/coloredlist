@@ -1875,6 +1875,36 @@ class LoginHandler(tornado.web.RequestHandler):
 
 <p>If the username or password is not provided, or if the username does not match any in our database, or if the password does not match, then we will return <code>response['status'] = 403</code>, <code>response['errorMsg'] = "Invalid username or password"</code> and <code>response['redirectUrl'] = "/login"</code>. <code>403</code> status code indicates <code>Forbidden</code>, and we provide a human-friendly error message <code>Invalid username or password</code>, then redirect the client back to <code>/login</code> URL.</p>
 
+<p>Since we are refactoring our authentication module, let's also do some housekeeping on our logout AJAX call to make it consistent with our login AJAX call.</p>
+
+<h3>
+<a id="staticjsmainjs" class="anchor" href="#staticjsmainjs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>static/js/main.js</code>
+</h3>
+
+<pre><code>$(document).ready(function() {
+    $('#logout-btn').click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/logout",
+            dataType: "json",
+            data: {},
+            success: function(response) {
+                if (response) {
+                    if (response.status != 200 &amp;&amp; response.errorMsg) {
+                        alert(response.errorMsg || "Error logging out");
+                    }
+                    if (response.redirectUrl) {
+                        window.location.href = response.redirectUrl;
+                    }
+                }
+            },
+        });
+    }); 
+});
+</code></pre>
+
+<p>The logic is the same as before, only difference is that we specify the <code>dataType</code> to be <code>json</code> so that we don't have to <code>JSON.parse</code> the response. We also check that there is a <code>redirectUrl</code> and set the <code>window.location.href</code> accordingly.</p>
+
 <p><a href="#table-of-contents">Back to top</a></p>
 
       <footer class="site-footer">
