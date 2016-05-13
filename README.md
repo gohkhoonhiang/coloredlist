@@ -2431,6 +2431,8 @@ if users.find_one({'username': username}):
 In our `AccountHandler`, somewhere in the `post` function we have the code to `self.write(json.dumps(response))`. We can now replace this with just `self.write_response_bad(errorMsg="Useralready exists", redirectUrl="/account/create")`.
 
 The rest of our handlers will follow the same pattern, calling the respective `write_response` according to status and passing the `errorMsg` and `redirectUrl` keyword arguments when necessary.
+
+[Back to top](#table-of-contents)
   
 ## Error Handling
 
