@@ -126,6 +126,15 @@
 <li><a href="#revisit-list-item-operations">Revisit List Item Operations</a></li>
 </ul>
 </li>
+<li>
+<a href="#refactoring-the-app">Refactoring the App</a>
+
+<ul>
+<li><a href="#base-handler">Base Handler</a></li>
+<li><a href="#write-response">Write Response</a></li>
+<li><a href="#error-handling">Error Handling</a></li>
+</ul>
+</li>
 </ul>
 
 <h1>
@@ -2338,6 +2347,240 @@ WriteResult({ "nInserted" : 1 })
 </code></pre>
 
 <p>You can see that it is similar in structure as the edit function, except that we don't need to pass the <code>text</code> field as data to the request.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h1>
+<a id="refactoring-the-app" class="anchor" href="#refactoring-the-app" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Refactoring the App</h1>
+
+<p>So far our handler classes have been inheriting directly from <code>tornado.web.RequestHandler</code>. This means that all the handlers will use the default behaviour provided by the class, but sometimes we want to customize things to suit our needs. In this case, it is better to write a <code>BaseHandler</code> that inherits from <code>tornado.web.RequestHandler</code>, and override certain functions to customize the behaviour, then all our handlers will inherit from <code>BaseHandler</code> all the customized functions.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="base-handler" class="anchor" href="#base-handler" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Base Handler</h2>
+
+<p>You might have noticed that we have a few places where we call <code>self.get_secure_cookie("user").decode("utf-8")</code> or <code>self.set_secure_cookie("user", user)</code>. It gets a little lengthy after a while. Also, if we somehow decide to add additional logic when getting the current user, we have to change all places using <code>self.get_secure_cookie("user").decode("utf-8")</code>. A better approach will be to override <code>get_current_user</code> of <code>tornado.web.RequestHandler</code> in our <code>BaseHandler</code>. On top of that, we also create some shortcut functions to get the current session information. </p>
+
+<p>First, we will create a new <code>handlers/base.py</code> file.</p>
+
+<pre><code>import tornado.web
+import json
+
+
+class BaseHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def get_current_session(self):
+        return self.get_current_user(), self.get_current_list()
+
+    def set_current_session(self, user, list_id):
+        self.set_secure_cookie("user", user)
+        self.set_secure_cookie("list_id", list_id)
+
+    def clear_current_session(self):
+        self.set_current_session("", "")
+
+    def get_current_user(self):
+        return self.get_secure_cookie("user").decode("utf-8")
+
+    def set_current_user(self, user):
+        self.set_secure_cookie("user", user)
+
+    def get_current_list(self):
+        return self.get_secure_cookie("list_id").decode("utf-8")
+
+    def set_current_list(self, list_id):
+        self.set_secure_cookie("list_id", str(list_id))
+</code></pre>
+
+<p>In this new file, we will create a <code>BaseHandler</code> class that extends <code>tornado.web.RequestHandler</code>. The class should be initialized with a <code>db</code> object. We will have functions that deal with session values.</p>
+
+<p><code>get_current_session</code> is created as a shortcut to retrieve current session's <code>user</code> and <code>list_id</code> in a tuple. This is so that we don't need to call <code>get_current_user</code> and <code>get_current_list</code> separately. Corresponding to getting the current session, we also have a convenient function to <code>set_current_session</code>. Sometimes, we need to clear session data at once, and it's easier to do it with <code>clear_current_session</code>.</p>
+
+<p>However, sometimes we might just need either <code>user</code> or <code>list_id</code> from the session, so we still have individual <code>get_current_user</code> and <code>get_current_list</code> functions and their setter counterparts.</p>
+
+<h3>
+<a id="urlspy" class="anchor" href="#urlspy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>urls.py</code>
+</h3>
+
+<p>Since we are extending from <code>BaseHandler</code>, we need to always provide the <code>db</code> object to the class. We have to change <code>urls.py</code> accordingly for <code>MainHandler</code>.</p>
+
+<pre><code>url(r"/", MainHandler, dict(db=db)),
+</code></pre>
+
+<h3>
+<a id="handlersmainpy" class="anchor" href="#handlersmainpy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>handlers/main.py</code>
+</h3>
+
+<p>We will show one example of how to change the handlers to extend <code>BaseHandler</code>.</p>
+
+<pre><code>from handlers.base import BaseHandler
+
+class MainHandler(BaseHandler):
+    def initialize(self, db):
+        super().initialize(db)
+</code></pre>
+
+<p>For example, in our <code>handlers/main.py</code>, we will change the parent class of <code>MainHandler</code> to <code>BaseHandler</code>, and we call <code>super().initialize(db)</code> instead of directly setting <code>self.db = db</code> as previously done.</p>
+
+<p>Besides, we also need to change all the <code>self.get_secure_cookie("user")</code> to <code>self.get_current_user()</code>.</p>
+
+<p>The other handlers should follow the same style as in <code>main.py</code>:</p>
+
+<ol>
+<li>Import base handler class by <code>from handlers.base import BaseHandler</code>
+</li>
+<li>Extend <code>BaseHandler</code> and call <code>super().initialize(db)</code>
+</li>
+<li>Change all <code>self.set_secure_cookie("user", username)</code> to <code>self.set_current_user(username)</code>
+</li>
+<li>Change all <code>self.get_secure_cookie("user")</code> to <code>self.get_current_user()</code>
+</li>
+<li>Change all <code>self.set_secure_cookie("list_id", list_id)</code> to <code>self.set_current_list(list_id)</code>
+</li>
+<li>Change all <code>self.get_secure_cookie("list_id")</code> to <code>self.get_current_list()</code>
+</li>
+</ol>
+
+<p>In places where we need both <code>user</code> and <code>list_id</code>, we can call the <code>username,list_id = self.get_current_session()</code> to get both values at once.</p>
+
+<h3>
+<a id="logouthandler" class="anchor" href="#logouthandler" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>LogoutHandler</code>
+</h3>
+
+<pre><code>def post(self):
+    if self.get_current_user():
+        self.clear_current_session()
+</code></pre>
+
+<p>In our <code>LogoutHandler</code>, we also change to use <code>self.clear_current_session</code> so that we don't have to call <code>self.set_current_user("")</code> and <code>self.set_current_list("")</code>.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="write-response" class="anchor" href="#write-response" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Write Response</h2>
+
+<p>Other than session values, another function that we call frequently is <code>self.write</code>, and we pass in a <code>response</code> object with attributes such as <code>status</code> and <code>redirectUrl</code>. Instead of having to create the <code>response</code> object everytime we need to write a response, why not we provide a common function in the <code>BaseHandler</code> that takes in just the <code>status</code> and <code>redirectUrl</code>, and will take care of creating the <code>response</code> and <code>write</code> it?</p>
+
+<pre><code>def write_response(self, status_code, **kwargs):
+    response = {}
+    response['status'] = status_code
+    response['redirectUrl'] = kwargs['redirectUrl'] if 'redirectUrl' in kwargs else None
+    response['errorMsg'] = kwargs['errorMsg'] if 'errorMsg' in kwargs else None
+    self.write(json.dumps(response))
+
+def write_response_ok(self, **kwargs):
+    self.write_response(200, **kwargs)
+
+def write_response_created(self, **kwargs):
+    self.write_response(201, **kwargs)
+
+def write_response_bad(self, **kwargs):
+    self.write_response(400, **kwargs)
+
+def write_response_forbidden(self, **kwargs):
+    kwargs['redirectUrl'] = "/login"
+    self.write_response(403, **kwargs)
+
+def write_response_not_found(self, **kwargs):
+    self.write_response(404, **kwargs)
+</code></pre>
+
+<p>Let's revisit the <code>BaseHandler</code> class. We will add a few more functions that deal with writing response. A base <code>write_response</code> function will take a required <code>status_code</code> argument, and a list of keyword arguments, then create a <code>response</code> object. By default it must set the <code>status</code> attribute, then if <code>redirectUrl</code> and <code>errorMsg</code> are found in the keyword arguments, they will be added to the <code>response</code> accordingly. Finally, it will call <code>json.dumps(response)</code> and <code>self.write</code> to write the response in JSON format.</p>
+
+<p>We provide a few commonly used status response, such as <code>200</code>, <code>201</code>, <code>400</code>, <code>403</code> and <code>404</code>. These functions do not take the <code>status_code</code>, instead it is set accordingly based on the purpose of the function. For example, the <code>write_response_ok</code> function will set <code>200</code> when calling <code>write_response</code>, then the <code>**kwargs</code> will be passed to <code>write_response</code> as-is.</p>
+
+<p>Except that for <code>write_response_forbidden</code>, we know that we want the user to login to access the resource, so we default the <code>redirectUrl</code> to <code>/login</code>.</p>
+
+<h3>
+<a id="accountpy" class="anchor" href="#accountpy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>account.py</code>
+</h3>
+
+<p>Let's look at an example of how to make use of the <code>BaseHandler</code>'s <code>write</code> functions.</p>
+
+<pre><code>if users.find_one({'username': username}):
+    self.write_response_bad(errorMsg="User already exists", redirectUrl="/account/create")
+</code></pre>
+
+<p>In our <code>AccountHandler</code>, somewhere in the <code>post</code> function we have the code to <code>self.write(json.dumps(response))</code>. We can now replace this with just <code>self.write_response_bad(errorMsg="Useralready exists", redirectUrl="/account/create")</code>.</p>
+
+<p>The rest of our handlers will follow the same pattern, calling the respective <code>write_response</code> according to status and passing the <code>errorMsg</code> and <code>redirectUrl</code> keyword arguments when necessary.</p>
+
+<h2>
+<a id="error-handling" class="anchor" href="#error-handling" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Error Handling</h2>
+
+<p>So far we have been seeing a plain text error message page that prints all the stack trace to the user. We don't actually want users to see the internals of our application, instead, we should customize a pretty page that gracefully shows an error message about the error.</p>
+
+<p>To achieve that, we will need to override <code>write_error</code> function of <code>tornado.web.RequestHandler</code>, and create a custom <code>error.html</code> template to display the error message. </p>
+
+<p>Besides, we should also provide a custom <code>404.html</code> page that is displayed when the user request for a resource that does not exist.</p>
+
+<h3>
+<a id="basehandler" class="anchor" href="#basehandler" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>BaseHandler</code>
+</h3>
+
+<pre><code>def write_error(self, status_code, **kwargs):
+    if 'exc_info' in kwargs:
+        err_cls, err, traceback = kwargs['exc_info']
+    errorMsg = err if err else ""
+    self.render("error.html", code=status_code, message=errorMsg)
+</code></pre>
+
+<p>In our <code>BaseHandler</code>, we will override <code>write_error</code> function. In the <a href="http://www.tornadoweb.org/en/stable/web.html#tornado.web.RequestHandler.write_error">official docs</a>, it is mentioned that if the <code>write_error</code> is caused by an uncaught exception, a <code>exc_info</code> tuple will be available in <code>kwargs</code>. This tuple contains the error class, the error message and the stack trace of the error. For our error page, we only need to output the simple error message, so we will take the 2nd value in the tuple and return as <code>message</code> for rendering. </p>
+
+<p>Then we create the <code>templates/error.html</code> to display the error message.</p>
+
+<pre><code>{% extends "base.html" %}
+{% block content %}
+&lt;div class="alert alert-danger" role="alert"&gt;An error has occurred!{% if message %}&lt;br&gt;{{ message }}{% end %}&lt;/div&gt;
+{% end %}
+</code></pre>
+
+<h3>
+<a id="errorhandler" class="anchor" href="#errorhandler" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>ErrorHandler</code>
+</h3>
+
+<p>Another common type of error encountered will be the famous <code>404</code> error. Instead of showing the default <code>404</code> page, we will create a custom <code>404</code> page for rendering.</p>
+
+<p>To render that custom page, we will need to create a custom <code>ErrorHandler</code> class in the <code>handlers/base.py</code> file.</p>
+
+<pre><code>class ErrorHandler(tornado.web.RequestHandler):
+    def prepare(self):
+        self.render("404.html")
+</code></pre>
+
+<p>We override the <code>prepare</code> function, which will be called before <code>get</code> or <code>post</code>. This allows us to intercept the requests where the resource is not available, and then render a <code>404.html</code> page.</p>
+
+<p>We need to tell our application to use this custom <code>ErrorHandler</code> class by a special setting in <code>settings.py</code>.</p>
+
+<pre><code>from handlers.base import ErrorHandler
+
+### other codes omitted
+
+settings['default_handler_class'] = ErrorHandler
+</code></pre>
+
+<p>Under <code>settings</code>, we will add one more attribute <code>default_handler_class</code> and assign <code>ErrorHandler</code> class to it.</p>
+
+<p>Finally, we create <code>templates/404.html</code> that will display an error message when the user requests for a resource that does not exist.</p>
+
+<pre><code>{% extends "base.html" %}
+{% block content %}
+&lt;div class="alert alert-danger" role="alert"&gt;Opps! The page you requested for has not been created. Go back to &lt;a href="/"&gt;home&lt;/a&gt; and try again.&lt;div&gt;
+{% end %}
+</code></pre>
+
+<h3>
+<a id="maincss-1" class="anchor" href="#maincss-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>main.css</code>
+</h3>
+
+<p>Since we have created new classes for displaying error messages, we must not forget to add the style to our <code>main.css</code>.</p>
+
+<pre><code>.alert { padding: 20px; width: 400px; border-radius: 5px; }
+.alert-danger { background-color: #e33; color: #eee; }
+</code></pre>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
