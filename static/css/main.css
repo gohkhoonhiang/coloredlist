@@ -30,3 +30,9 @@ p { margin: 0 0 6px 0; }
 */
 #header { height: 68px; position: relative; }
 #control { width: 500px; float: right; padding: 10px 237px 0 0; text-align: right; }
+
+/*
+    ALERT
+*/
+.alert { padding: 20px; width: 400px; border-radius: 5px; }
+.alert-danger { background-color: #e33; color: #eee; }

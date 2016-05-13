@@ -56,6 +56,7 @@
 * [Refactoring the App](#refactoring-the-app)
   * [Base Handler](#base-handler)
   * [Write Response](#write-response)
+  * [Error Handling](#error-handling)
 
 
 # Introduction
@@ -2431,3 +2432,78 @@ In our `AccountHandler`, somewhere in the `post` function we have the code to `s
 
 The rest of our handlers will follow the same pattern, calling the respective `write_response` according to status and passing the `errorMsg` and `redirectUrl` keyword arguments when necessary.
   
+## Error Handling
+
+So far we have been seeing a plain text error message page that prints all the stack trace to the user. We don't actually want users to see the internals of our application, instead, we should customize a pretty page that gracefully shows an error message about the error.
+
+To achieve that, we will need to override `write_error` function of `tornado.web.RequestHandler`, and create a custom `error.html` template to display the error message. 
+
+Besides, we should also provide a custom `404.html` page that is displayed when the user request for a resource that does not exist.
+
+### `BaseHandler`
+
+```
+def write_error(self, status_code, **kwargs):
+    if 'exc_info' in kwargs:
+        err_cls, err, traceback = kwargs['exc_info']
+    errorMsg = err if err else ""
+    self.render("error.html", code=status_code, message=errorMsg)
+```
+
+In our `BaseHandler`, we will override `write_error` function. In the [official docs](http://www.tornadoweb.org/en/stable/web.html#tornado.web.RequestHandler.write_error), it is mentioned that if the `write_error` is caused by an uncaught exception, a `exc_info` tuple will be available in `kwargs`. This tuple contains the error class, the error message and the stack trace of the error. For our error page, we only need to output the simple error message, so we will take the 2nd value in the tuple and return as `message` for rendering. 
+
+Then we create the `templates/error.html` to display the error message.
+
+```
+{% extends "base.html" %}
+{% block content %}
+<div class="alert alert-danger" role="alert">An error has occurred!{% if message %}<br>{{ message }}{% end %}</div>
+{% end %}
+```
+
+### `ErrorHandler`
+
+Another common type of error encountered will be the famous `404` error. Instead of showing the default `404` page, we will create a custom `404` page for rendering.
+
+To render that custom page, we will need to create a custom `ErrorHandler` class in the `handlers/base.py` file.
+
+```
+class ErrorHandler(tornado.web.RequestHandler):
+    def prepare(self):
+        self.render("404.html")
+```
+
+We override the `prepare` function, which will be called before `get` or `post`. This allows us to intercept the requests where the resource is not available, and then render a `404.html` page.
+
+We need to tell our application to use this custom `ErrorHandler` class by a special setting in `settings.py`.
+
+```
+from handlers.base import ErrorHandler
+
+### other codes omitted
+
+settings['default_handler_class'] = ErrorHandler
+```
+
+Under `settings`, we will add one more attribute `default_handler_class` and assign `ErrorHandler` class to it.
+
+Finally, we create `templates/404.html` that will display an error message when the user requests for a resource that does not exist.
+
+```
+{% extends "base.html" %}
+{% block content %}
+<div class="alert alert-danger" role="alert">Opps! The page you requested for has not been created. Go back to <a href="/">home</a> and try again.<div>
+{% end %}
+```
+
+### `main.css`
+
+Since we have created new classes for displaying error messages, we must not forget to add the style to our `main.css`.
+
+```
+.alert { padding: 20px; width: 400px; border-radius: 5px; }
+.alert-danger { background-color: #e33; color: #eee; }
+```
+
+[Back to top](#table-of-contents)
+

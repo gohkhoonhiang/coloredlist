@@ -1,6 +1,7 @@
 import os
 import tornado
 from tornado.options import define, options, parse_config_file 
+from handlers.base import ErrorHandler
 
 
 # Define file paths
@@ -31,5 +32,6 @@ settings['debug'] = options.debug
 settings['static_path'] = STATIC_ROOT
 settings['template_path'] = TEMPLATE_ROOT
 settings['cookie_secret'] = options.cookie_secret
+settings['default_handler_class'] = ErrorHandler
 
 

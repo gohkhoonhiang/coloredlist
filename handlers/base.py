@@ -1,5 +1,6 @@
 import tornado.web
 import json
+import traceback
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -17,17 +18,23 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_current_session("", "")
 
     def get_current_user(self):
-        return self.get_secure_cookie("user").decode("utf-8")
+        return self.get_secure_cookie("user").decode("utf-8") if self.get_secure_cookie("user") else None
 
     def set_current_user(self, user):
         self.set_secure_cookie("user", user)
 
     def get_current_list(self):
-        return self.get_secure_cookie("list_id").decode("utf-8")
+        return self.get_secure_cookie("list_id").decode("utf-8") if self.get_secure_cookie("list_id") else None
 
     def set_current_list(self, list_id):
         self.set_secure_cookie("list_id", str(list_id))
 
+    def write_error(self, status_code, **kwargs):
+        if 'exc_info' in kwargs:
+            err_cls, err, traceback = kwargs['exc_info']
+        errorMsg = err if err else ""
+        self.render("error.html", code=status_code, message=errorMsg)
+        
     def write_response(self, status_code, **kwargs):
         response = {}
         response['status'] = status_code
@@ -51,5 +58,8 @@ class BaseHandler(tornado.web.RequestHandler):
     def write_response_not_found(self, **kwargs):
         self.write_response(404, **kwargs)
 
+class ErrorHandler(tornado.web.RequestHandler):
+    def prepare(self):
+        self.render("404.html")
 
 

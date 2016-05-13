@@ -12,23 +12,26 @@ class LoginHandler(BaseHandler):
         self.render("login.html")
 
     def post(self):
-        username = self.get_body_argument("username")
-        password = self.get_body_argument("password")
-        users = self.db['users']
-        if username and password:
-            user = users.find_one({'username': username})
-            if user:
-                stored_pass = user['password']
-                hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
-                if hashed_pass == stored_pass:
-                    self.set_current_user(username)
-                    self.write_response_ok(redirectUrl="/list")
+        if self.get_body_arguments("username") != [] and self.get_body_arguments("password") != []:
+            username = self.get_body_argument("username")
+            password = self.get_body_argument("password")
+            users = self.db['users']
+            if username and password:
+                user = users.find_one({'username': username})
+                if user:
+                    stored_pass = user['password']
+                    hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
+                    if hashed_pass == stored_pass:
+                        self.set_current_user(username)
+                        self.write_response_ok(redirectUrl="/list")
+                    else:
+                        self.write_response_forbidden(errorMsg="Invalid username or password")
                 else:
                     self.write_response_forbidden(errorMsg="Invalid username or password")
             else:
                 self.write_response_forbidden(errorMsg="Invalid username or password")
         else:
-            self.write_response_forbidden(errorMsg="Invalid username or password")
+            self.write_response_bad(errorMsg="Username or password not provided", redirectUrl="/login")
 
 class LogoutHandler(BaseHandler):
     def initialize(self, db):
