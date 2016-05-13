@@ -53,6 +53,8 @@
   * [Create Default List for New User](#create-default-list-for-new-user)
   * [Authenticate User and Load List](#authenticate-user-and-load-list)
   * [Revisit List Item Operations](#revisit-list-item-operations)
+* [Refactoring the App](#refactoring-the-app)
+  * [Base Handler](#base-handler)
 
 
 # Introduction
@@ -2283,3 +2285,100 @@ You can see that it is similar in structure as the edit function, except that we
 
 [Back to top](#table-of-contents)
 
+# Refactoring the App
+
+So far our handler classes have been inheriting directly from `tornado.web.RequestHandler`. This means that all the handlers will use the default behaviour provided by the class, but sometimes we want to customize things to suit our needs. In this case, it is better to write a `BaseHandler` that inherits from `tornado.web.RequestHandler`, and override certain functions to customize the behaviour, then all our handlers will inherit from `BaseHandler` all the customized functions.
+
+[Back to top](#table-of-contents)
+
+## Base Handler
+
+You might have noticed that we have a few places where we call `self.get_secure_cookie("user").decode("utf-8")` or `self.set_secure_cookie("user", user)`. It gets a little lengthy after a while. Also, if we somehow decide to add additional logic when getting the current user, we have to change all places using `self.get_secure_cookie("user").decode("utf-8")`. A better approach will be to override `get_current_user` of `tornado.web.RequestHandler` in our `BaseHandler`. On top of that, we also create some shortcut functions to get the current session information. 
+
+First, we will create a new `handlers/base.py` file.
+
+```
+import tornado.web
+import json
+
+
+class BaseHandler(tornado.web.RequestHandler):
+    def initialize(self, db):
+        self.db = db
+
+    def get_current_session(self):
+        return self.get_current_user(), self.get_current_list()
+
+    def set_current_session(self, user, list_id):
+        self.set_secure_cookie("user", user)
+        self.set_secure_cookie("list_id", list_id)
+
+    def clear_current_session(self):
+        self.set_current_session("", "")
+
+    def get_current_user(self):
+        return self.get_secure_cookie("user").decode("utf-8")
+
+    def set_current_user(self, user):
+        self.set_secure_cookie("user", user)
+
+    def get_current_list(self):
+        return self.get_secure_cookie("list_id").decode("utf-8")
+
+    def set_current_list(self, list_id):
+        self.set_secure_cookie("list_id", str(list_id))
+```
+
+In this new file, we will create a `BaseHandler` class that extends `tornado.web.RequestHandler`. The class should be initialized with a `db` object. We will have functions that deal with session values.
+
+`get_current_session` is created as a shortcut to retrieve current session's `user` and `list_id` in a tuple. This is so that we don't need to call `get_current_user` and `get_current_list` separately. Corresponding to getting the current session, we also have a convenient function to `set_current_session`. Sometimes, we need to clear session data at once, and it's easier to do it with `clear_current_session`.
+
+However, sometimes we might just need either `user` or `list_id` from the session, so we still have individual `get_current_user` and `get_current_list` functions and their setter counterparts.
+
+### `urls.py`
+
+Since we are extending from `BaseHandler`, we need to always provide the `db` object to the class. We have to change `urls.py` accordingly for `MainHandler`.
+
+```
+url(r"/", MainHandler, dict(db=db)),
+```
+
+### `handlers/main.py`
+
+We will show one example of how to change the handlers to extend `BaseHandler`.
+
+```
+from handlers.base import BaseHandler
+
+class MainHandler(BaseHandler):
+    def initialize(self, db):
+        super().initialize(db)
+```
+
+For example, in our `handlers/main.py`, we will change the parent class of `MainHandler` to `BaseHandler`, and we call `super().initialize(db)` instead of directly setting `self.db = db` as previously done.
+
+Besides, we also need to change all the `self.get_secure_cookie("user")` to `self.get_current_user()`.
+
+The other handlers should follow the same style as in `main.py`:
+
+1. Import base handler class by `from handlers.base import BaseHandler`
+2. Extend `BaseHandler` and call `super().initialize(db)`
+3. Change all `self.set_secure_cookie("user", username)` to `self.set_current_user(username)`
+4. Change all `self.get_secure_cookie("user")` to `self.get_current_user()`
+5. Change all `self.set_secure_cookie("list_id", list_id)` to `self.set_current_list(list_id)`
+6. Change all `self.get_secure_cookie("list_id")` to `self.get_current_list()`
+
+In places where we need both `user` and `list_id`, we can call the `username,list_id = self.get_current_session()` to get both values at once.
+
+### `LogoutHandler`
+
+```
+def post(self):
+    if self.get_current_user():
+        self.clear_current_session()
+```
+
+In our `LogoutHandler`, we also change to use `self.clear_current_session` so that we don't have to call `self.set_current_user("")` and `self.set_current_list("")`.
+
+[Back to top](#table-of-contents)
+  

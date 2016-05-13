@@ -1,11 +1,12 @@
 import tornado.web
 import json
 import hashlib
+from handlers.base import BaseHandler
 
 
-class LoginHandler(tornado.web.RequestHandler):
+class LoginHandler(BaseHandler):
     def initialize(self, db):
-        self.db = db
+        super().initialize(db)
 
     def get(self):
         self.render("login.html")
@@ -21,7 +22,7 @@ class LoginHandler(tornado.web.RequestHandler):
                 stored_pass = user['password']
                 hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
                 if hashed_pass == stored_pass:
-                    self.set_secure_cookie("user", username)
+                    self.set_current_user(username)
                     response['status'] = 200
                     response['redirectUrl'] = "/list"
                     self.write(json.dumps(response))
@@ -41,20 +42,19 @@ class LoginHandler(tornado.web.RequestHandler):
             response['redirectUrl'] = "/login"
             self.write(json.dumps(response))
 
-class LogoutHandler(tornado.web.RequestHandler):
+class LogoutHandler(BaseHandler):
     def initialize(self, db):
-        self.db = db
+        super().initialize(db)
 
     def post(self):
         response = {}
-        if self.get_secure_cookie("user"):
-            self.set_secure_cookie("user", "")
-            self.set_secure_cookie("list_id", "")
+        if self.get_current_user():
+            self.clear_current_session()
             response['status'] = 200
             response['redirectUrl'] = "/login"
             self.write(json.dumps(response))
         else:
-            self.set_secure_cookie("list_id", "")
+            self.clear_current_session()
             response['status'] = 400
             response['errorMsg'] = "User not in session"
             response['redirectUrl'] = "/login"

@@ -1,11 +1,12 @@
 import tornado.web
 import hashlib
 import json
+from handlers.base import BaseHandler
 
 
-class AccountHandler(tornado.web.RequestHandler):
+class AccountHandler(BaseHandler):
     def initialize(self, db):
-        self.db = db
+        super().initialize(db)
 
     def get(self):
         self.render("account_create.html")
@@ -26,7 +27,7 @@ class AccountHandler(tornado.web.RequestHandler):
                 hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
                 users.insert_one({'username': username, 'password': hashed_pass, 'is_admin': False, 'is_active': True})
                 lists.insert_one({'list_name':"Default", 'username': username, 'share_link': ""})
-                self.set_secure_cookie("user", username)
+                self.set_current_user(username)
                 response['status'] = 201
                 response['redirectUrl'] = "/list"
                 self.write(json.dumps(response))
