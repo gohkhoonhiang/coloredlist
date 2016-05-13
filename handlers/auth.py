@@ -15,7 +15,6 @@ class LoginHandler(BaseHandler):
         username = self.get_body_argument("username")
         password = self.get_body_argument("password")
         users = self.db['users']
-        response = {}
         if username and password:
             user = users.find_one({'username': username})
             if user:
@@ -23,24 +22,13 @@ class LoginHandler(BaseHandler):
                 hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
                 if hashed_pass == stored_pass:
                     self.set_current_user(username)
-                    response['status'] = 200
-                    response['redirectUrl'] = "/list"
-                    self.write(json.dumps(response))
+                    self.write_response_ok(redirectUrl="/list")
                 else:
-                    response['status'] = 403
-                    response['errorMsg'] = "Invalid username or password"
-                    response['redirectUrl'] = "/login"
-                    self.write(json.dumps(response))
+                    self.write_response_forbidden(errorMsg="Invalid username or password")
             else:
-                response['status'] = 403
-                response['errorMsg'] = "Invalid username or password"
-                response['redirectUrl'] = "/login"
-                self.write(json.dumps(response))
+                self.write_response_forbidden(errorMsg="Invalid username or password")
         else:
-            response['status'] = 403
-            response['errorMsg'] = "Invalid username or password"
-            response['redirectUrl'] = "/login"
-            self.write(json.dumps(response))
+            self.write_response_forbidden(errorMsg="Invalid username or password")
 
 class LogoutHandler(BaseHandler):
     def initialize(self, db):
@@ -50,14 +38,9 @@ class LogoutHandler(BaseHandler):
         response = {}
         if self.get_current_user():
             self.clear_current_session()
-            response['status'] = 200
-            response['redirectUrl'] = "/login"
-            self.write(json.dumps(response))
+            self.write_response_ok(redirectUrl="/login")
         else:
             self.clear_current_session()
-            response['status'] = 400
-            response['errorMsg'] = "User not in session"
-            response['redirectUrl'] = "/login"
-            self.write(json.dumps(response))
+            self.write_response_bad(errorMsg="User not in session", redirectUrl="/login")
 
 

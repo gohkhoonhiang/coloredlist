@@ -55,6 +55,7 @@
   * [Revisit List Item Operations](#revisit-list-item-operations)
 * [Refactoring the App](#refactoring-the-app)
   * [Base Handler](#base-handler)
+  * [Write Response](#write-response)
 
 
 # Introduction
@@ -2381,4 +2382,52 @@ def post(self):
 In our `LogoutHandler`, we also change to use `self.clear_current_session` so that we don't have to call `self.set_current_user("")` and `self.set_current_list("")`.
 
 [Back to top](#table-of-contents)
+
+## Write Response
+
+Other than session values, another function that we call frequently is `self.write`, and we pass in a `response` object with attributes such as `status` and `redirectUrl`. Instead of having to create the `response` object everytime we need to write a response, why not we provide a common function in the `BaseHandler` that takes in just the `status` and `redirectUrl`, and will take care of creating the `response` and `write` it?
+
+```
+def write_response(self, status_code, **kwargs):
+    response = {}
+    response['status'] = status_code
+    response['redirectUrl'] = kwargs['redirectUrl'] if 'redirectUrl' in kwargs else None
+    response['errorMsg'] = kwargs['errorMsg'] if 'errorMsg' in kwargs else None
+    self.write(json.dumps(response))
+
+def write_response_ok(self, **kwargs):
+    self.write_response(200, **kwargs)
+    
+def write_response_created(self, **kwargs):
+    self.write_response(201, **kwargs)
+    
+def write_response_bad(self, **kwargs):
+    self.write_response(400, **kwargs)
+        
+def write_response_forbidden(self, **kwargs):
+    kwargs['redirectUrl'] = "/login"
+    self.write_response(403, **kwargs)
+
+def write_response_not_found(self, **kwargs):
+    self.write_response(404, **kwargs)
+```
+
+Let's revisit the `BaseHandler` class. We will add a few more functions that deal with writing response. A base `write_response` function will take a required `status_code` argument, and a list of keyword arguments, then create a `response` object. By default it must set the `status` attribute, then if `redirectUrl` and `errorMsg` are found in the keyword arguments, they will be added to the `response` accordingly. Finally, it will call `json.dumps(response)` and `self.write` to write the response in JSON format.
+
+We provide a few commonly used status response, such as `200`, `201`, `400`, `403` and `404`. These functions do not take the `status_code`, instead it is set accordingly based on the purpose of the function. For example, the `write_response_ok` function will set `200` when calling `write_response`, then the `**kwargs` will be passed to `write_response` as-is.
+
+Except that for `write_response_forbidden`, we know that we want the user to login to access the resource, so we default the `redirectUrl` to `/login`.
+
+### `account.py`
+
+Let's look at an example of how to make use of the `BaseHandler`'s `write` functions.
+
+```
+if users.find_one({'username': username}):
+    self.write_response_bad(errorMsg="User already exists", redirectUrl="/account/create")
+```
+
+In our `AccountHandler`, somewhere in the `post` function we have the code to `self.write(json.dumps(response))`. We can now replace this with just `self.write_response_bad(errorMsg="Useralready exists", redirectUrl="/account/create")`.
+
+The rest of our handlers will follow the same pattern, calling the respective `write_response` according to status and passing the `errorMsg` and `redirectUrl` keyword arguments when necessary.
   

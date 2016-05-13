@@ -26,87 +26,47 @@ class ListHandler(BaseHandler):
             self.render("login.html")
 
     def post(self):
-        response = {}
         username,list_id = self.get_current_session()
         if username and list_id:
             lists = self.db['lists']
             list_items = self.db['list_items']
             text = self.get_body_argument("text")
             if text:
-                if list_id:
-                    list_items.insert_one({'list_id': ObjectId(list_id), 'text':text, 'color':"Blue", 'status':"Open"})
-            response['status'] = 201
-            response['redirectUrl'] = "/list"
-            self.write(json.dumps(response))
+                list_items.insert_one({'list_id': ObjectId(list_id), 'text':text, 'color':"Blue", 'status':"Open"})
+            self.write_response_created(redirectUrl="/list")
         else:
-            response['status'] = 403
-            response['errorMsg'] = "Please login to access your list"
-            response['redirectUrl'] = "/login"
-            self.write(json.dumps(response))
+            self.write_response_forbidden(errorMsg="Please login to access your list")
 
     def put(self, item_id):
-        response = {}
         username,list_id = self.get_current_session()
         if username and list_id:
             lists = self.db['lists']
             list_items = self.db['list_items']
             text = self.get_body_argument("text")
             if text:
-                if list_id:
-                    item = list_items.find({'_id': ObjectId(item_id)})
-                    if item:
-                        list_items.update_one({'_id':ObjectId(item_id)}, {'$set':{'text':text}})
-                        response['status'] = 200
-                        response['redirectUrl'] = "/list"
-                        self.write(json.dumps(response))
-                    else:
-                        response['status'] = 404
-                        response['errorMsg'] = "Item not found"
-                        response['redirectUrl'] = "/list"
-                        self.write(json.dumps(response))
+                item = list_items.find({'_id': ObjectId(item_id)})
+                if item:
+                    list_items.update_one({'_id':ObjectId(item_id)}, {'$set':{'text':text}})
+                    self.write_response_ok(redirectUrl="/list")
                 else:
-                    response['status'] = 404
-                    response['errorMsg'] = "List not in session. Please re-login"
-                    response['redirectUrl'] = "/login"
-                    self.write(json.dumps(response))
+                    self.write_response_not_found(errorMsg="Item not found", redirectUrl="/list")
             else:
-                response['status'] = 400
-                response['errorMsg'] = "Empty list item text"
-                response['redirectUrl'] = "/list"
-                self.write(json.dumps(response))
+                self.write_response_bad(errorMsg="Empty list item text", redirectUrl="/list")
         else:
-            response['status'] = 403
-            response['errorMsg'] = "Please login to access your list"
-            response['redirectUrl'] = "/login"
-            self.write(json.dumps(response))
+            self.write_response_forbidden(errorMsg="Please login to access your list")
 
     def delete(self, item_id):
-        response = {}
         username,list_id = self.get_current_session()
         if username and list_id:
             lists = self.db['lists']
             list_items = self.db['list_items']
-            if list_id:
-                item = list_items.find({'_id': ObjectId(item_id)})
-                if item:
-                    list_items.remove({'_id':ObjectId(item_id)})
-                    response['status'] = 200
-                    response['redirectUrl'] = "/list"
-                    self.write(json.dumps(response))
-                else:
-                    response['status'] = 404
-                    response['errorMsg'] = "Item not found"
-                    response['redirectUrl'] = "/list"
-                    self.write(json.dumps(response))
+            item = list_items.find({'_id': ObjectId(item_id)})
+            if item:
+                list_items.remove({'_id':ObjectId(item_id)})
+                self.write_response_ok(redirectUrl="/list")
             else:
-                response['status'] = 404
-                response['errorMsg'] = "List not in session. Please re-login"
-                response['redirectUrl'] = "/login"
-                self.write(json.dumps(response))
+                self.write_response_not_found(errorMsg="Item not found", redirectUrl="/list")
         else:
-            response['status'] = 403
-            response['errorMsg'] = "Please login to access your list"
-            response['redirectUrl'] = "/login"
-            self.write(json.dumps(response))
+            self.write_response_forbidden(errorMsg="Please login to access your list")
 
 
