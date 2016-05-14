@@ -133,6 +133,8 @@
 <li><a href="#base-handler">Base Handler</a></li>
 <li><a href="#write-response">Write Response</a></li>
 <li><a href="#error-handling">Error Handling</a></li>
+<li><a href="#modular-templating">Modular Templating</a></li>
+<li><a href="#common-javascript">Common Javascript</a></li>
 </ul>
 </li>
 </ul>
@@ -2583,6 +2585,204 @@ settings['default_handler_class'] = ErrorHandler
 <pre><code>.alert { padding: 20px; width: 400px; border-radius: 5px; }
 .alert-danger { background-color: #e33; color: #eee; }
 </code></pre>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="modular-templating" class="anchor" href="#modular-templating" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Modular Templating</h2>
+
+<p>Our templates structure is still not quite streamlined. You would have noticed that we are including the jQuery library in every template file that we create, which is not the way to go. Oue goal is to only include the jQuery library once and be used by all sub-templates. To do so, we need to do some housekeeping on the <code>templates/base.html</code> file.</p>
+
+<h3>
+<a id="scripts" class="anchor" href="#scripts" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Scripts</h3>
+
+<p>Before that, let's create a <code>templates/scripts.html</code> file.</p>
+
+<pre><code>&lt;script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"&gt;&lt;/script&gt;
+&lt;script src="{{ static_url('js/main.js') }}"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>We will include the jQuery library, <code>base.js</code> and <code>main.js</code> in this file. This file allows us to add more common scripts later without having to change every other script files.</p>
+
+<pre><code>{% include "scripts.html" %}
+{% block scripts %}
+{% end %}
+</code></pre>
+
+<p>We then declare <code>{% include "scripts.html" %}</code> in the <code>base.html</code> file. We also declare a <code>{% block scripts %}</code> which is used by sub-templates to include their own individual scripts.</p>
+
+<pre><code>{% block scripts %}
+&lt;script src="{{ static_url('js/account.js') }}"&gt;&lt;/script&gt;
+{% end %}
+</code></pre>
+
+<p>For example, in our <code>account_create.html</code>, we will declare <code>{% block scripts %}</code> and include the <code>&lt;script&gt;</code> tag for <code>account.js</code>.</p>
+
+<h3>
+<a id="styles" class="anchor" href="#styles" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Styles</h3>
+
+<p>We also have a similar problem with our stylesheets, so we should also create a <code>templates/styles.html</code> file that includes all common style sheets.</p>
+
+<pre><code>&lt;link rel="stylesheet" href="{{ static_url('css/main.css') }}"&gt;
+&lt;link rel="stylesheet" href="{{ static_url('css/sidebar.css') }}"&gt;
+</code></pre>
+
+<p>Then we will <code>{% include "styles.html" %}</code> in <code>templates/base.html</code>, and also declare <code>{% block styles %}</code> for sub-templates to include their own stylesheets.</p>
+
+<pre><code>&lt;title&gt;Colored List App&lt;/title&gt;
+{% include "styles.html" %}
+{% block styles %}
+{% end %}
+</code></pre>
+
+<p>To make use of this, we will change our <code>templates/list.html</code> file, and include the <code>&lt;script&gt;</code> tag for <code>list.css</code> inside the <code>{% block styles %}</code>.</p>
+
+<pre><code>{% block styles %}
+&lt;link rel="stylesheet" href="{{ static_url('css/list.css') }}"&gt;
+{% end %}
+</code></pre>
+
+<h3>
+<a id="header-sidebar-and-footer" class="anchor" href="#header-sidebar-and-footer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Header, Sidebar and Footer</h3>
+
+<p>To keep the <code>base.html</code> as simple and short as possible, I thought it would be good to extract the header, sidebar and footer into separate templates, and then include them in the <code>base.html</code>. This is so that when the either of these sections grow, the <code>base.html</code> will not get too complicated to read.</p>
+
+<p>We will create <code>templates/header.html</code>, <code>templates/sidebar.html</code> and <code>templates/footer.html</code> files, and declare <code>{% include "header.html" %}</code>, <code>{% include "sidebar.html" %}</code> and <code>{% include "footer.html" %}</code> in their right places.</p>
+
+<pre><code>&lt;div id="page-wrap"&gt;
+    {% include "header.html" %}
+    {% include "sidebar.html" %}
+    &lt;div id="main"&gt;
+    {% block content %}
+    {% end %}
+    &lt;/div&gt;
+&lt;/div&gt;
+{% include "scripts.html" %}
+{% block scripts %}
+{% end %}
+{% include "footer.html" %}
+</code></pre>
+
+<h3>
+<a id="headerhtml" class="anchor" href="#headerhtml" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>header.html</code>
+</h3>
+
+<pre><code>&lt;div id="header"&gt;
+    &lt;h1&gt;&lt;a href="/"&gt;Colored List App&lt;/a&gt;&lt;/h1&gt;
+    &lt;div id="control"&gt;
+        &lt;p&gt;&lt;a href="#" id="logout-btn" class="button"&gt;Log Out&lt;/a&gt;&amp;nbsp;&lt;a href="/account" class="button"&gt;Your Account&lt;/a&gt;&lt;/p&gt;
+        &lt;p&gt;&lt;a href="/account/create" class="button"&gt;Sign Up&lt;/a&gt;&amp;nbsp;&lt;a href="/login" class="button"&gt;Log In&lt;/a&gt;&lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+
+<h3>
+<a id="sidebarhtml" class="anchor" href="#sidebarhtml" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>sidebar.html</code>
+</h3>
+
+<pre><code>&lt;div id="ribbon"&gt;
+    Reminders
+    &lt;ul&gt;
+        &lt;li&gt;Your list automatically saves&lt;/li&gt;
+        &lt;li&gt;Double-click list items to edit them&lt;/li&gt;
+    &lt;/ul&gt;
+&lt;/div&gt;
+</code></pre>
+
+<h3>
+<a id="footerhtml" class="anchor" href="#footerhtml" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>footer.html</code>
+</h3>
+
+<pre><code>&lt;div class="footer"&gt;
+    &lt;span&gt;&amp;copy; 2016 Coloredlist App&lt;/span&gt;
+&lt;/div&gt;
+</code></pre>
+
+<p>For styling the footer, we will include <code>.footer { text-align: center; bottom: 20px; }</code> in <code>static/css/main.css</code>.</p>
+
+<p><a href="#table-of-contents">Back to top</a></p>
+
+<h2>
+<a id="common-javascript" class="anchor" href="#common-javascript" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Common Javascript</h2>
+
+<p>We have refactored our templates, let's also refactor our Javascripts. As this is mainly a Tornado tutorial, I will not go into using frontend frameworks eg. AngularJS, instead, I will just create simple base Javascripts using jQuery.</p>
+
+<p>First, we will create a <code>static/js/base.js</code> file.</p>
+
+<pre><code>function sendRequest(type, url, data) {
+    $.ajax({
+        type: type,
+        url: url,
+        dataType: "json",
+        data: data,
+        success: function(response) {
+            handleResponse(response);
+        },
+    });
+}
+
+function getRequest(url, data) {
+    sendRequest("GET", url, data);
+}
+
+function postRequest(url, data) {
+    sendRequest("POST", url, data);
+}
+
+function putRequest(url, data) {
+    sendRequest("PUT", url, data);
+}
+
+function deleteRequest(url, data) {
+    sendRequest("DELETE", url, data);
+}
+
+function redirect(url) {
+    if (url) {
+        window.location.href = url;
+    }
+}
+
+function alertError(errorMsg) {
+    alert(errorMsg || "An error has occurred");
+}
+
+function handleResponse(response) {
+    if (response) {
+        if (response.errorMsg) {
+            alertError(response.errorMsg);
+        }
+        redirect(response.redirectUrl);
+    }
+}
+</code></pre>
+
+<p>We have been calling <code>$.ajax</code> everywhere in our various frontend scripts, and we want to simplify that using a base function. For each of the <code>get</code>, <code>post</code>, <code>put</code> and <code>delete</code> methods, we will create a wrapper function that takes <code>url</code> and <code>data</code> arguments, and together with the HTTP method, the arguments are passed to the base <code>sendRequest</code> function.</p>
+
+<p>In the base <code>sendRequest</code> function, we will call the actual jQuery's <code>$.ajax</code>, and handle the response using a common <code>handleResponse</code> function.</p>
+
+<p>We all have wrapper functions for displaying <code>alert</code> and redirecting URLs, so that we don't have to keep checking for empty values.</p>
+
+<p>Now that we have the <code>base.js</code> file, we want to include it in every page of our application. To do so, we just include <code>&lt;script src="{{ static_url('js/base.js') }}"&gt;&lt;/script&gt;</code> in the <code>templates/scripts.html</code> file.</p>
+
+<p>Let's look at how we can call the base function to send request to the server.</p>
+
+<pre><code>$('#new-item-submit').click(function(e) {
+    e.preventDefault();
+    var text = $('#new-list-item-text').val();
+    if (text) {
+        var url = "/list/create";
+        var data = {"text":text};
+        postRequest(url, data);
+    } else {
+        alertError("Item text should not be empty.");
+    }
+});
+</code></pre>
+
+<p>For example, in our <code>static/js/list.js</code> file, we will replace the <code>$.ajax</code> function with just the simple <code>postRequest</code> function, passing in <code>url</code> and <code>data</code> as arguments. It will then take care of sending the request using the appropriate HTTP method, and will handle the response and redirect if any. This will apply to all the other scripts that make use of <code>$.ajax</code> call.</p>
+
+<p>Besides, you would notice that we are calling <code>alertError</code> instead of <code>alert</code> function. This allows us to customize how we want to display our error message, instead of being hardcoded to using the Javascript <code>alert</code> function.</p>
 
 <p><a href="#table-of-contents">Back to top</a></p>
 
