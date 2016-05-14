@@ -58,6 +58,7 @@
   * [Write Response](#write-response)
   * [Error Handling](#error-handling)
   * [Modular Templating](#modular-templating)
+  * [Common Javascript](#common-javascript)
 
 
 # Introduction
@@ -2621,6 +2622,91 @@ We will create `templates/header.html`, `templates/sidebar.html` and `templates/
 ```
 
 For styling the footer, we will include `.footer { text-align: center; bottom: 20px; }` in `static/css/main.css`.
+
+[Back to top](#table-of-contents)
+
+## Common Javascript
+
+We have refactored our templates, let's also refactor our Javascripts. As this is mainly a Tornado tutorial, I will not go into using frontend frameworks eg. AngularJS, instead, I will just create simple base Javascripts using jQuery.
+
+First, we will create a `static/js/base.js` file.
+
+```
+function sendRequest(type, url, data) {
+    $.ajax({
+        type: type,
+        url: url,
+        dataType: "json",
+        data: data,
+        success: function(response) {
+            handleResponse(response);
+        },
+    });
+}
+
+function getRequest(url, data) {
+    sendRequest("GET", url, data);
+}
+
+function postRequest(url, data) {
+    sendRequest("POST", url, data);
+}
+
+function putRequest(url, data) {
+    sendRequest("PUT", url, data);
+}
+
+function deleteRequest(url, data) {
+    sendRequest("DELETE", url, data);
+}
+
+function redirect(url) {
+    if (url) {
+        window.location.href = url;
+    }
+}
+
+function alertError(errorMsg) {
+    alert(errorMsg || "An error has occurred");
+}
+
+function handleResponse(response) {
+    if (response) {
+        if (response.errorMsg) {
+            alertError(response.errorMsg);
+        }
+        redirect(response.redirectUrl);
+    }
+}
+```
+
+We have been calling `$.ajax` everywhere in our various frontend scripts, and we want to simplify that using a base function. For each of the `get`, `post`, `put` and `delete` methods, we will create a wrapper function that takes `url` and `data` arguments, and together with the HTTP method, the arguments are passed to the base `sendRequest` function.
+
+In the base `sendRequest` function, we will call the actual jQuery's `$.ajax`, and handle the response using a common `handleResponse` function.
+
+We all have wrapper functions for displaying `alert` and redirecting URLs, so that we don't have to keep checking for empty values.
+
+Now that we have the `base.js` file, we want to include it in every page of our application. To do so, we just include `<script src="{{ static_url('js/base.js') }}"></script>` in the `templates/scripts.html` file.
+
+Let's look at how we can call the base function to send request to the server.
+
+```
+$('#new-item-submit').click(function(e) {
+    e.preventDefault();
+    var text = $('#new-list-item-text').val();
+    if (text) {
+        var url = "/list/create";
+        var data = {"text":text};
+        postRequest(url, data);
+    } else {
+        alertError("Item text should not be empty.");
+    }
+});
+```
+
+For example, in our `static/js/list.js` file, we will replace the `$.ajax` function with just the simple `postRequest` function, passing in `url` and `data` as arguments. It will then take care of sending the request using the appropriate HTTP method, and will handle the response and redirect if any. This will apply to all the other scripts that make use of `$.ajax` call.
+
+Besides, you would notice that we are calling `alertError` instead of `alert` function. This allows us to customize how we want to display our error message, instead of being hardcoded to using the Javascript `alert` function.
 
 [Back to top](#table-of-contents)
 

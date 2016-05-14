@@ -4,24 +4,11 @@ $(document).ready(function() {
         var username = $('#username').val();
         var password = $('#password').val();
         if (username && password) {
-            $.ajax({
-                type: "POST",
-                url: "/login/submit",
-                dataType: "json",
-                data: {"username":username, "password":password},
-                success: function(response) {
-                    if (response) {
-                        if (response.status != 200 && response.errorMsg) {
-                            alert(response.errorMsg || "Unable to login");
-                        }
-                        if (response.redirectUrl) {
-                            window.location.href = response.redirectUrl;
-                        }
-                    }
-                },
-            });
+            var url = "/login/submit";
+            var data = {"username":username, "password":password};
+            postRequest(url, data);
         } else {
-            alert("Please enter both username and password");
+            alertError("Please enter both username and password");
         }
     });
 });
