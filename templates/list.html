@@ -1,6 +1,8 @@
 {% extends "base.html" %}
-{% block content %}
+{% block styles %}
 <link rel="stylesheet" href="{{ static_url('css/list.css') }}">
+{% end %}
+{% block content %}
 <ul id="list">
 {% for item in items %}
     <li class="{{ item['color'] }}">
@@ -15,6 +17,7 @@
         <input type="submit" id="new-item-submit" value="Add" class="button">
     </div>
 </form>
-<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+{% end %}
+{% block scripts %}
 <script src="{{ static_url('js/list.js') }}"></script>
 {% end %}

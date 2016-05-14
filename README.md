@@ -57,6 +57,7 @@
   * [Base Handler](#base-handler)
   * [Write Response](#write-response)
   * [Error Handling](#error-handling)
+  * [Modular Templating](#modular-templating)
 
 
 # Introduction
@@ -2506,6 +2507,120 @@ Since we have created new classes for displaying error messages, we must not for
 .alert { padding: 20px; width: 400px; border-radius: 5px; }
 .alert-danger { background-color: #e33; color: #eee; }
 ```
+
+[Back to top](#table-of-contents)
+
+## Modular Templating
+
+Our templates structure is still not quite streamlined. You would have noticed that we are including the jQuery library in every template file that we create, which is not the way to go. Oue goal is to only include the jQuery library once and be used by all sub-templates. To do so, we need to do some housekeeping on the `templates/base.html` file.
+
+### Scripts
+
+Before that, let's create a `templates/scripts.html` file.
+
+```
+<script src="https://code.jquery.com/jquery-2.2.3.min.js" integrity="sha256-a23g1Nt4dtEYOj7bR+vTu7+T8VP13humZFBJNIYoEJo=" crossorigin="anonymous"></script>
+<script src="{{ static_url('js/main.js') }}"></script>
+```
+
+We will include the jQuery library, `base.js` and `main.js` in this file. This file allows us to add more common scripts later without having to change every other script files.
+
+```
+{% include "scripts.html" %}
+{% block scripts %}
+{% end %}
+```
+
+We then declare `{% include "scripts.html" %}` in the `base.html` file. We also declare a `{% block scripts %}` which is used by sub-templates to include their own individual scripts.
+
+```
+{% block scripts %}
+<script src="{{ static_url('js/account.js') }}"></script>
+{% end %}
+```
+
+For example, in our `account_create.html`, we will declare `{% block scripts %}` and include the `<script>` tag for `account.js`.
+
+### Styles
+
+We also have a similar problem with our stylesheets, so we should also create a `templates/styles.html` file that includes all common style sheets.
+
+```
+<link rel="stylesheet" href="{{ static_url('css/main.css') }}">
+<link rel="stylesheet" href="{{ static_url('css/sidebar.css') }}">
+```
+
+Then we will `{% include "styles.html" %}` in `templates/base.html`, and also declare `{% block styles %}` for sub-templates to include their own stylesheets.
+
+```
+<title>Colored List App</title>
+{% include "styles.html" %}
+{% block styles %}
+{% end %}
+```
+
+To make use of this, we will change our `templates/list.html` file, and include the `<script>` tag for `list.css` inside the `{% block styles %}`.
+
+```
+{% block styles %}
+<link rel="stylesheet" href="{{ static_url('css/list.css') }}">
+{% end %}
+```
+
+### Header, Sidebar and Footer
+
+To keep the `base.html` as simple and short as possible, I thought it would be good to extract the header, sidebar and footer into separate templates, and then include them in the `base.html`. This is so that when the either of these sections grow, the `base.html` will not get too complicated to read.
+
+We will create `templates/header.html`, `templates/sidebar.html` and `templates/footer.html` files, and declare `{% include "header.html" %}`, `{% include "sidebar.html" %}` and `{% include "footer.html" %}` in their right places.
+
+```
+<div id="page-wrap">
+    {% include "header.html" %}
+    {% include "sidebar.html" %}
+    <div id="main">
+    {% block content %}
+    {% end %}
+    </div>
+</div>
+{% include "scripts.html" %}
+{% block scripts %}
+{% end %}
+{% include "footer.html" %}
+```
+
+### `header.html`
+
+```
+<div id="header">
+    <h1><a href="/">Colored List App</a></h1>
+    <div id="control">
+        <p><a href="#" id="logout-btn" class="button">Log Out</a>&nbsp;<a href="/account" class="button">Your Account</a></p>
+        <p><a href="/account/create" class="button">Sign Up</a>&nbsp;<a href="/login" class="button">Log In</a></p>
+    </div>
+</div>
+```
+
+### `sidebar.html`
+
+```
+<div id="ribbon">
+    Reminders
+    <ul>
+        <li>Your list automatically saves</li>
+        <li>Double-click list items to edit them</li>
+    </ul>
+</div>
+```
+
+### `footer.html`
+
+```
+<div class="footer">
+    <span>&copy; 2016 Coloredlist App</span>
+</div>
+```
+
+For styling the footer, we will include `.footer { text-align: center; bottom: 20px; }` in `static/css/main.css`.
 
 [Back to top](#table-of-contents)
 

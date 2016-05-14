@@ -36,3 +36,8 @@ p { margin: 0 0 6px 0; }
 */
 .alert { padding: 20px; width: 400px; border-radius: 5px; }
 .alert-danger { background-color: #e33; color: #eee; }
+
+/*
+    FOOTER
+*/
+.footer { text-align: center; bottom: 20px; }
