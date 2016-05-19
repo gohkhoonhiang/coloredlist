@@ -33,7 +33,7 @@ class ListHandler(BaseHandler):
             text = self.get_body_argument("text")
             if text:
                 list_items.insert_one({'list_id': ObjectId(list_id), 'text':text, 'color':"Blue", 'status':"Open"})
-            self.write_response_created(redirectUrl="/list")
+            self.write_response_created()
         else:
             self.write_response_forbidden(errorMsg="Please login to access your list")
 
@@ -47,11 +47,11 @@ class ListHandler(BaseHandler):
                 item = list_items.find({'_id': ObjectId(item_id)})
                 if item:
                     list_items.update_one({'_id':ObjectId(item_id)}, {'$set':{'text':text}})
-                    self.write_response_ok(redirectUrl="/list")
+                    self.write_response_ok()
                 else:
-                    self.write_response_not_found(errorMsg="Item not found", redirectUrl="/list")
+                    self.write_response_not_found(errorMsg="Item not found")
             else:
-                self.write_response_bad(errorMsg="Empty list item text", redirectUrl="/list")
+                self.write_response_bad(errorMsg="Empty list item text")
         else:
             self.write_response_forbidden(errorMsg="Please login to access your list")
 
@@ -63,9 +63,9 @@ class ListHandler(BaseHandler):
             item = list_items.find({'_id': ObjectId(item_id)})
             if item:
                 list_items.remove({'_id':ObjectId(item_id)})
-                self.write_response_ok(redirectUrl="/list")
+                self.write_response_ok()
             else:
-                self.write_response_not_found(errorMsg="Item not found", redirectUrl="/list")
+                self.write_response_not_found(errorMsg="Item not found")
         else:
             self.write_response_forbidden(errorMsg="Please login to access your list")
 

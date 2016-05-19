@@ -31,7 +31,7 @@ class LoginHandler(BaseHandler):
             else:
                 self.write_response_forbidden(errorMsg="Invalid username or password")
         else:
-            self.write_response_bad(errorMsg="Username or password not provided", redirectUrl="/login")
+            self.write_response_bad(errorMsg="Username or password not provided")
 
 class LogoutHandler(BaseHandler):
     def initialize(self, db):
@@ -44,6 +44,6 @@ class LogoutHandler(BaseHandler):
             self.write_response_ok(redirectUrl="/login")
         else:
             self.clear_current_session()
-            self.write_response_bad(errorMsg="User not in session", redirectUrl="/login")
+            self.write_response_bad(errorMsg="User not in session")
 
 

@@ -2388,14 +2388,16 @@ In our `LogoutHandler`, we also change to use `self.clear_current_session` so th
 
 ## Write Response
 
-Other than session values, another function that we call frequently is `self.write`, and we pass in a `response` object with attributes such as `status` and `redirectUrl`. Instead of having to create the `response` object everytime we need to write a response, why not we provide a common function in the `BaseHandler` that takes in just the `status` and `redirectUrl`, and will take care of creating the `response` and `write` it?
+*EDIT: After reading more about error handling and consulting my mentor, I realized that my previous approach was not quite the standard practice. Thus, I have decided to revise this tutorial to make it more acceptable. It may still not be the best practice, but I believe it is better than how I did it previously. With this incident also proves that having the `BaseHandler` handles the response and errors, and a `base.js` to handle the response is one of the best decisions I have made. It makes my revision so much easier. This is a revised version of the tutorial. For the previous version, please refer to [commit d71f9dfa875c4c4b98be83ae97fa259b911bc6c7](https://github.com/gohkhoonhiang/coloredlist/commit/d71f9dfa875c4c4b98be83ae97fa259b911bc6c7).*
+
+Other than session values, another function that we call frequently is `self.write`, and we pass in a `response` object with attributes such as `status` and `errorMsg`. Instead of having to create the `response` object everytime we need to write a response, why not we provide a common function in the `BaseHandler` that takes in just the `status` and `errorMsg`, and will take care of creating the `response` and `write` it?
 
 ```
 def write_response(self, status_code, **kwargs):
     response = {}
     response['status'] = status_code
-    response['redirectUrl'] = kwargs['redirectUrl'] if 'redirectUrl' in kwargs else None
     response['errorMsg'] = kwargs['errorMsg'] if 'errorMsg' in kwargs else None
+    self.set_status(status_code)
     self.write(json.dumps(response))
 
 def write_response_ok(self, **kwargs):
@@ -2415,11 +2417,9 @@ def write_response_not_found(self, **kwargs):
     self.write_response(404, **kwargs)
 ```
 
-Let's revisit the `BaseHandler` class. We will add a few more functions that deal with writing response. A base `write_response` function will take a required `status_code` argument, and a list of keyword arguments, then create a `response` object. By default it must set the `status` attribute, then if `redirectUrl` and `errorMsg` are found in the keyword arguments, they will be added to the `response` accordingly. Finally, it will call `json.dumps(response)` and `self.write` to write the response in JSON format.
+Let's revisit the `BaseHandler` class. We will add a few more functions that deal with writing response. A base `write_response` function will take a required `status_code` argument, and a list of keyword arguments, then create a `response` object. By default it must set the `status` attribute, then if `errorMsg` is found in the keyword arguments, they will be added to the `response` accordingly. We will also properly set the response status code using `self.set_status(status_code)` so that the client can handle the response as an `error`. Finally, it will call `json.dumps(response)` and `self.write` to write the response in JSON format.
 
 We provide a few commonly used status response, such as `200`, `201`, `400`, `403` and `404`. These functions do not take the `status_code`, instead it is set accordingly based on the purpose of the function. For example, the `write_response_ok` function will set `200` when calling `write_response`, then the `**kwargs` will be passed to `write_response` as-is.
-
-Except that for `write_response_forbidden`, we know that we want the user to login to access the resource, so we default the `redirectUrl` to `/login`.
 
 ### `account.py`
 
@@ -2427,10 +2427,10 @@ Let's look at an example of how to make use of the `BaseHandler`'s `write` funct
 
 ```
 if users.find_one({'username': username}):
-    self.write_response_bad(errorMsg="User already exists", redirectUrl="/account/create")
+    self.write_response_bad(errorMsg="User already exists")
 ```
 
-In our `AccountHandler`, somewhere in the `post` function we have the code to `self.write(json.dumps(response))`. We can now replace this with just `self.write_response_bad(errorMsg="Useralready exists", redirectUrl="/account/create")`.
+In our `AccountHandler`, somewhere in the `post` function we have the code to `self.write(json.dumps(response))`. We can now replace this with just `self.write_response_bad(errorMsg="User already exists")`.
 
 The rest of our handlers will follow the same pattern, calling the respective `write_response` according to status and passing the `errorMsg` and `redirectUrl` keyword arguments when necessary.
 
@@ -2632,7 +2632,7 @@ We have refactored our templates, let's also refactor our Javascripts. As this i
 First, we will create a `static/js/base.js` file.
 
 ```
-function sendRequest(type, url, data) {
+function sendRequest(type, url, data, successUrl, errorUrl) {
     $.ajax({
         type: type,
         url: url,
@@ -2640,24 +2640,33 @@ function sendRequest(type, url, data) {
         data: data,
         success: function(response) {
             handleResponse(response);
+            redirect(successUrl);
+        },
+        error: function(response) {
+            handleResponse(response);
+            if (response.status == 403) {
+                redirect("/login");
+            } else {
+                redirect(errorUrl);
+            }
         },
     });
 }
 
-function getRequest(url, data) {
-    sendRequest("GET", url, data);
+function getRequest(url, data, successUrl, errorUrl) {
+    sendRequest("GET", url, data, successUrl, errorUrl);
 }
 
-function postRequest(url, data) {
-    sendRequest("POST", url, data);
+function postRequest(url, data, successUrl, errorUrl) {
+    sendRequest("POST", url, data, successUrl, errorUrl);
 }
 
-function putRequest(url, data) {
-    sendRequest("PUT", url, data);
+function putRequest(url, data, successUrl, errorUrl) {
+    sendRequest("PUT", url, data, successUrl, errorUrl);
 }
 
-function deleteRequest(url, data) {
-    sendRequest("DELETE", url, data);
+function deleteRequest(url, data, successUrl, errorUrl) {
+    sendRequest("DELETE", url, data, successUrl, errorUrl);
 }
 
 function redirect(url) {
@@ -2671,20 +2680,19 @@ function alertError(errorMsg) {
 }
 
 function handleResponse(response) {
-    if (response) {
-        if (response.errorMsg) {
-            alertError(response.errorMsg);
+    if (response && response.responseJSON) {
+        if (response.responseJSON.errorMsg) {
+            alertError(response.responseJSON.errorMsg);
         }
-        redirect(response.redirectUrl);
     }
 }
 ```
 
 We have been calling `$.ajax` everywhere in our various frontend scripts, and we want to simplify that using a base function. For each of the `get`, `post`, `put` and `delete` methods, we will create a wrapper function that takes `url` and `data` arguments, and together with the HTTP method, the arguments are passed to the base `sendRequest` function.
 
-In the base `sendRequest` function, we will call the actual jQuery's `$.ajax`, and handle the response using a common `handleResponse` function.
+In the base `sendRequest` function, we will call the actual jQuery's `$.ajax`, and handle the response using a common `handleResponse` function. In the AJAX callback, we will handle 2 cases: `success` and `error`. On `success` response, we will handle the response and redirect to the `successUrl` given by the caller. Otherwise, we will check whether the status is `403`, if it is, then we will redirect to `/login` immediately; else we will redirect to the `errorUrl` given by the caller. I'm not sure if this is a standard practice, but it seems okay to me at this point. Perhaps when I read up more in the future, I will need to rewrite this part again.
 
-We all have wrapper functions for displaying `alert` and redirecting URLs, so that we don't have to keep checking for empty values.
+We also have wrapper functions for displaying `alert` and redirecting URLs, so that we don't have to keep checking for empty values.
 
 Now that we have the `base.js` file, we want to include it in every page of our application. To do so, we just include `<script src="{{ static_url('js/base.js') }}"></script>` in the `templates/scripts.html` file.
 
@@ -2697,14 +2705,14 @@ $('#new-item-submit').click(function(e) {
     if (text) {
         var url = "/list/create";
         var data = {"text":text};
-        postRequest(url, data);
+        postRequest(url, data, "/list", "/list");
     } else {
         alertError("Item text should not be empty.");
     }
 });
 ```
 
-For example, in our `static/js/list.js` file, we will replace the `$.ajax` function with just the simple `postRequest` function, passing in `url` and `data` as arguments. It will then take care of sending the request using the appropriate HTTP method, and will handle the response and redirect if any. This will apply to all the other scripts that make use of `$.ajax` call.
+For example, in our `static/js/list.js` file, we will replace the `$.ajax` function with just the simple `postRequest` function, passing in `url`, `data` and "/list" as both `successUrl` and `errorUrl` as arguments. It will then take care of sending the request using the appropriate HTTP method, and will handle the response and redirect if any. This will apply to all the other scripts that make use of `$.ajax` call.
 
 Besides, you would notice that we are calling `alertError` instead of `alert` function. This allows us to customize how we want to display our error message, instead of being hardcoded to using the Javascript `alert` function.
 

@@ -38,8 +38,8 @@ class BaseHandler(tornado.web.RequestHandler):
     def write_response(self, status_code, **kwargs):
         response = {}
         response['status'] = status_code
-        response['redirectUrl'] = kwargs['redirectUrl'] if 'redirectUrl' in kwargs else None
         response['errorMsg'] = kwargs['errorMsg'] if 'errorMsg' in kwargs else None
+        self.set_status(status_code)
         self.write(json.dumps(response))
 
     def write_response_ok(self, **kwargs):

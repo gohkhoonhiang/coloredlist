@@ -3,6 +3,6 @@ $(document).ready(function() {
         e.preventDefault();
         var url = "/logout";
         var data = {};
-        postRequest(url, data);
+        postRequest(url, data, "/login", "/login");
     }); 
 });

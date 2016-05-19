@@ -6,7 +6,7 @@ $(document).ready(function() {
         if (username && password) {
             var url = "/login/submit";
             var data = {"username":username, "password":password};
-            postRequest(url, data);
+            postRequest(url, data, "/list", "/login");
         } else {
             alertError("Please enter both username and password");
         }

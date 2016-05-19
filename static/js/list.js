@@ -5,7 +5,7 @@ $(document).ready(function() {
         if (text) {
             var url = "/list/create";
             var data = {"text":text};
-            postRequest(url, data);
+            postRequest(url, data, "/list", "/list");
         } else {
             alertError("Item text should not be empty.");
         }
@@ -18,7 +18,7 @@ $(document).ready(function() {
         if (text) {
             var url = "/list/" + itemId + "/edit";
             var data = {"text": text};
-            putRequest(url, data);
+            putRequest(url, data, "/list", "/list");
         } else {
             alertError("Item text should not be empty.");
         }
@@ -29,6 +29,6 @@ $(document).ready(function() {
         var itemId = $(itemSpan).find("input[type='hidden']").val();
         var url = "/list/" + itemId + "/delete";
         var data = {};
-        deleteRequest(url, data);
+        deleteRequest(url, data, "/list", "/list");
     });
 });

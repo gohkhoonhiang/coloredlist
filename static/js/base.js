@@ -1,4 +1,4 @@
-function sendRequest(type, url, data) {
+function sendRequest(type, url, data, successUrl, errorUrl) {
     $.ajax({
         type: type,
         url: url,
@@ -6,24 +6,33 @@ function sendRequest(type, url, data) {
         data: data,
         success: function(response) {
             handleResponse(response);
+            redirect(successUrl);
+        },
+        error: function(response) {
+            handleResponse(response);
+            if (response.status == 403) {
+                redirect("/login");
+            } else {
+                redirect(errorUrl);
+            }
         },
     });
 }
 
-function getRequest(url, data) {
-    sendRequest("GET", url, data);
+function getRequest(url, data, successUrl, errorUrl) {
+    sendRequest("GET", url, data, successUrl, errorUrl);
 }
 
-function postRequest(url, data) {
-    sendRequest("POST", url, data);
+function postRequest(url, data, successUrl, errorUrl) {
+    sendRequest("POST", url, data, successUrl, errorUrl);
 }
 
-function putRequest(url, data) {
-    sendRequest("PUT", url, data);
+function putRequest(url, data, successUrl, errorUrl) {
+    sendRequest("PUT", url, data, successUrl, errorUrl);
 }
 
-function deleteRequest(url, data) {
-    sendRequest("DELETE", url, data);
+function deleteRequest(url, data, successUrl, errorUrl) {
+    sendRequest("DELETE", url, data, successUrl, errorUrl);
 }
 
 function redirect(url) {
@@ -37,10 +46,9 @@ function alertError(errorMsg) {
 }
 
 function handleResponse(response) {
-    if (response) {
-        if (response.errorMsg) {
-            alertError(response.errorMsg);
+    if (response && response.responseJSON) {
+        if (response.responseJSON.errorMsg) {
+            alertError(response.responseJSON.errorMsg);
         }
-        redirect(response.redirectUrl);
     }
 }

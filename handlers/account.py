@@ -19,7 +19,7 @@ class AccountHandler(BaseHandler):
                 users = self.db['users']
                 lists = self.db['lists']
                 if users.find_one({'username': username}):
-                    self.write_response_bad(errorMsg="User already exists", redirectUrl="/account/create")
+                    self.write_response_bad(errorMsg="User already exists")
                 else:
                     hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
                     users.insert_one({'username': username, 'password': hashed_pass, 'is_admin': False, 'is_active': True})
@@ -27,8 +27,8 @@ class AccountHandler(BaseHandler):
                     self.set_current_user(username)
                     self.write_response_created(redirectUrl="/list")
             else:
-                self.write_response_bad(errorMsg="Invalid username or password", redirectUrl="/account/create")
+                self.write_response_bad(errorMsg="Invalid username or password")
         else:
-            self.write_response_bad(errorMsg="Username or password not provided", redirectUrl="/account/create")
+            self.write_response_bad(errorMsg="Username or password not provided")
 
             

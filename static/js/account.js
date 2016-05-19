@@ -8,7 +8,7 @@ $(document).ready(function() {
             if (password === confirm_password) {
                 var url = "/account/create/submit";
                 var data = {"username":username, "password":password};
-                postRequest(url, data);
+                postRequest(url, data, "/list", "/account/create");
             } else {
                 alertError("Password and Confirm Password do not match!");
             }
