@@ -1736,7 +1736,7 @@ First, we need to make some changes to our `login.html` template.
 {% end %}
 ```
 
-*It's worth noting that we are now moving towards using AJAX for form submit, because we want to implement a RESTful server that returns JSON response. We will only use `<a>` tag for getting rendered response. Let's start refactoring our code from the authentication module, and we will refactor the rest of the application whenever necessary.* 
+*It's worth noting that we are now moving towards using AJAX for form submit, because we want to implement a REST-like server that returns JSON response. We will only use `<a>` tag for getting rendered response. Let's start refactoring our code from the authentication module, and we will refactor the rest of the application whenever necessary.* 
 
 We have removed the `action` and `method` attributes of the `form`, instead, we will use AJAX to post the form data to the server, we are going to include the jQuery scripts and a new `js/login.js` file.
 
@@ -1971,7 +1971,7 @@ Similarly, if the account creation failed, we redirect them to the `/account/cre
 
 With this change, we can remove `account_success.html` and `account_error.html` from `templates` directory.
 
-As we change our back-end into a RESTful function, we also need to change our client `static/js/account.js`.
+As we change our back-end into a REST-like function, we also need to change our client `static/js/account.js`.
 
 ```
 $(document).ready(function() {
@@ -2188,7 +2188,7 @@ In our `handlers/list.py` file, we will change the `put` function to make use of
 
 For `user` and `list_id` not found in `self.get_secure_cookie`, it means that the user is no longer logged in, and we should return `response['redirectUrl'] = "/login"` so that the client can redirect to the login page for user to re-login. Otherwise, we will just return `response['redirectUrl'] = "/list"` for the client to refresh the list page.
 
-We also change our `static/js/list.js` file to handle the new RESTful JSON response from the server.
+We also change our `static/js/list.js` file to handle the new REST-like JSON response from the server.
 
 ```
 $('.edit-button').click(function() {
