@@ -52,7 +52,6 @@ class BaseHandler(tornado.web.RequestHandler):
         self.write_response(400, **kwargs)
         
     def write_response_forbidden(self, **kwargs):
-        kwargs['redirectUrl'] = "/login"
         self.write_response(403, **kwargs)
 
     def write_response_not_found(self, **kwargs):

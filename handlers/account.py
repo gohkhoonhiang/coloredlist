@@ -25,7 +25,7 @@ class AccountHandler(BaseHandler):
                     users.insert_one({'username': username, 'password': hashed_pass, 'is_admin': False, 'is_active': True})
                     lists.insert_one({'list_name':"Default", 'username': username, 'share_link': ""})
                     self.set_current_user(username)
-                    self.write_response_created(redirectUrl="/list")
+                    self.write_response_created()
             else:
                 self.write_response_bad(errorMsg="Invalid username or password")
         else:

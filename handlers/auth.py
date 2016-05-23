@@ -23,7 +23,7 @@ class LoginHandler(BaseHandler):
                     hashed_pass = hashlib.md5(password.encode("utf-8")).hexdigest()
                     if hashed_pass == stored_pass:
                         self.set_current_user(username)
-                        self.write_response_ok(redirectUrl="/list")
+                        self.write_response_ok()
                     else:
                         self.write_response_forbidden(errorMsg="Invalid username or password")
                 else:
@@ -41,7 +41,7 @@ class LogoutHandler(BaseHandler):
         response = {}
         if self.get_current_user():
             self.clear_current_session()
-            self.write_response_ok(redirectUrl="/login")
+            self.write_response_ok()
         else:
             self.clear_current_session()
             self.write_response_bad(errorMsg="User not in session")
