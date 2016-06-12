@@ -720,9 +720,9 @@ Let's break it down a little and explain some of the new code.
 
 In the `get` method, we get the collection object by calling `self.db['lists']`. To retrieve the documents, we need to get a cursor to the dataset by calling `list_items.find`, which is like a iterator to the documents. We use list comprehension construct `[item for item in list_items.find()]` to collect the documents into a list that can be used to render the `list.html` page.
 
-For the `post` method, we will call the list_items.insert_one` method, passing in the dictionary containing the item text and color as parameter. The `_id` field will be automatically generated.
+For the `post` method, we will call the `list_items.insert_one` method, passing in the dictionary containing the item text and color as parameter. The `_id` field will be automatically generated.
 
-For the `put` method, we will first call `list_items.find_one` and pass in the `ObjectId(item_id)` as the query filter. This will return us only one result or none. If the result is not none, then we will update the collection and setting a new `text value for the document with `_id` `ObjectId(item_id)`.
+For the `put` method, we will first call `list_items.find_one` and pass in the `ObjectId(item_id)` as the query filter. This will return us only one result or none. If the result is not none, then we will update the collection and setting a new `text` value for the document with `_id` `ObjectId(item_id)`.
 
 Finally in the `delete` method, similar to the `put` method, we first query the collection to get the document with the same `ObjectId(item_id)`, then we simply call `list_items.remove` to delete the document from the collection.
 
@@ -2096,7 +2096,7 @@ def post(self):
 
 We need to make sure the user is in session by calling `self.get_secure_cookie("user")` and make sure it exists. Then we will retrieve the user's list by using the `list_id` in `self.get_seccure_cookie`, create a new list item using the given `text` in `self.get_body_argument("text")` and call `list_items.insert_one` to add the item to the list. If it's all successful, we will return `response['status'] = 201` and `response['redirectUrl'] = "/list"` to indicate `Created` status and let the client redirect to the list to reflect the change.
 
-If the user is no longer in session, we will need to return `response['status'] = 403` for `Forbidden`, provide the appropriate `response['errorMsg'] = "Please login to access your list"` message, and `response['redirectUrl'] = "/login" will allow the client to redirect to login page.
+If the user is no longer in session, we will need to return `response['status'] = 403` for `Forbidden`, provide the appropriate `response['errorMsg'] = "Please login to access your list"` message, and `response['redirectUrl'] = "/login"` will allow the client to redirect to login page.
 
 We will refactor the function to use AJAX call in the front-end and handle the JSON response from the back-end. First, in our `templates/list.html`, we will remove the `action` and `method` attributes from the `add-new` form.
 
