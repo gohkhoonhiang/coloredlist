@@ -800,9 +800,9 @@ def delete(self, item_id):
 
 <p>In the <code>get</code> method, we get the collection object by calling <code>self.db['lists']</code>. To retrieve the documents, we need to get a cursor to the dataset by calling <code>list_items.find</code>, which is like a iterator to the documents. We use list comprehension construct <code>[item for item in list_items.find()]</code> to collect the documents into a list that can be used to render the <code>list.html</code> page.</p>
 
-<p>For the <code>post</code> method, we will call the list_items.insert_one<code>method, passing in the dictionary containing the item text and color as parameter. The</code>_id` field will be automatically generated.</p>
+<p>For the <code>post</code> method, we will call the <code>list_items.insert_one</code> method, passing in the dictionary containing the item text and color as parameter. The <code>_id</code> field will be automatically generated.</p>
 
-<p>For the <code>put</code> method, we will first call <code>list_items.find_one</code> and pass in the <code>ObjectId(item_id)</code> as the query filter. This will return us only one result or none. If the result is not none, then we will update the collection and setting a new <code>text value for the document with</code>_id<code></code>ObjectId(item_id)`.</p>
+<p>For the <code>put</code> method, we will first call <code>list_items.find_one</code> and pass in the <code>ObjectId(item_id)</code> as the query filter. This will return us only one result or none. If the result is not none, then we will update the collection and setting a new <code>text</code> value for the document with <code>_id</code> <code>ObjectId(item_id)</code>.</p>
 
 <p>Finally in the <code>delete</code> method, similar to the <code>put</code> method, we first query the collection to get the document with the same <code>ObjectId(item_id)</code>, then we simply call <code>list_items.remove</code> to delete the document from the collection.</p>
 
@@ -1807,7 +1807,7 @@ url(r"/account/create/submit", AccountHandler, dict(db=db)),
 {% end %}
 </code></pre>
 
-<p><em>It's worth noting that we are now moving towards using AJAX for form submit, because we want to implement a RESTful server that returns JSON response. We will only use <code>&lt;a&gt;</code> tag for getting rendered response. Let's start refactoring our code from the authentication module, and we will refactor the rest of the application whenever necessary.</em> </p>
+<p><em>It's worth noting that we are now moving towards using AJAX for form submit, because we want to implement a REST-like server that returns JSON response. We will only use <code>&lt;a&gt;</code> tag for getting rendered response. Let's start refactoring our code from the authentication module, and we will refactor the rest of the application whenever necessary.</em> </p>
 
 <p>We have removed the <code>action</code> and <code>method</code> attributes of the <code>form</code>, instead, we will use AJAX to post the form data to the server, we are going to include the jQuery scripts and a new <code>js/login.js</code> file.</p>
 
@@ -2039,7 +2039,7 @@ WriteResult({ "nInserted" : 1 })
 
 <p>With this change, we can remove <code>account_success.html</code> and <code>account_error.html</code> from <code>templates</code> directory.</p>
 
-<p>As we change our back-end into a RESTful function, we also need to change our client <code>static/js/account.js</code>.</p>
+<p>As we change our back-end into a REST-like function, we also need to change our client <code>static/js/account.js</code>.</p>
 
 <pre><code>$(document).ready(function() {
     $('#new-account-submit').click(function(e) {
@@ -2163,7 +2163,7 @@ WriteResult({ "nInserted" : 1 })
 
 <p>We need to make sure the user is in session by calling <code>self.get_secure_cookie("user")</code> and make sure it exists. Then we will retrieve the user's list by using the <code>list_id</code> in <code>self.get_seccure_cookie</code>, create a new list item using the given <code>text</code> in <code>self.get_body_argument("text")</code> and call <code>list_items.insert_one</code> to add the item to the list. If it's all successful, we will return <code>response['status'] = 201</code> and <code>response['redirectUrl'] = "/list"</code> to indicate <code>Created</code> status and let the client redirect to the list to reflect the change.</p>
 
-<p>If the user is no longer in session, we will need to return <code>response['status'] = 403</code> for <code>Forbidden</code>, provide the appropriate <code>response['errorMsg'] = "Please login to access your list"</code> message, and `response['redirectUrl'] = "/login" will allow the client to redirect to login page.</p>
+<p>If the user is no longer in session, we will need to return <code>response['status'] = 403</code> for <code>Forbidden</code>, provide the appropriate <code>response['errorMsg'] = "Please login to access your list"</code> message, and <code>response['redirectUrl'] = "/login"</code> will allow the client to redirect to login page.</p>
 
 <p>We will refactor the function to use AJAX call in the front-end and handle the JSON response from the back-end. First, in our <code>templates/list.html</code>, we will remove the <code>action</code> and <code>method</code> attributes from the <code>add-new</code> form.</p>
 
@@ -2253,7 +2253,7 @@ WriteResult({ "nInserted" : 1 })
 
 <p>For <code>user</code> and <code>list_id</code> not found in <code>self.get_secure_cookie</code>, it means that the user is no longer logged in, and we should return <code>response['redirectUrl'] = "/login"</code> so that the client can redirect to the login page for user to re-login. Otherwise, we will just return <code>response['redirectUrl'] = "/list"</code> for the client to refresh the list page.</p>
 
-<p>We also change our <code>static/js/list.js</code> file to handle the new RESTful JSON response from the server.</p>
+<p>We also change our <code>static/js/list.js</code> file to handle the new REST-like JSON response from the server.</p>
 
 <pre><code>$('.edit-button').click(function() {
     var itemSpan = $(this).parent();
